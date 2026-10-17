@@ -15,6 +15,8 @@
 
 </div>
 
+<p align="center"><img src="docs/assets/logo.png" alt="hackeraiETC logo" width="160"></p>
+
 ## Getting started
 
 Coding agents should start with [AGENTS.md](AGENTS.md).
