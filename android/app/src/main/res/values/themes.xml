@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Base application theme. The UI is Jetpack Compose, which applies its own
+        Material 3 theme at runtime; this XML theme only styles the launch window.
+    -->
+    <style name="Theme.HackerAICompanion" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="android:statusBarColor">@color/ic_launcher_background</item>
+    </style>
+</resources>
