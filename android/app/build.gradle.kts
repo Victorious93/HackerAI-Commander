@@ -80,8 +80,6 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
-    // Published from droidcommand-AI via ./gradlew :core-hackerai:publishToMavenLocal
-    implementation(libs.droidcommand.core.hackerai)
     // API key encrypted at rest via Android Keystore + AES-256-GCM.
     implementation(libs.androidx.security.crypto)
     ksp(libs.hilt.compiler)
