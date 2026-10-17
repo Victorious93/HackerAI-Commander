@@ -18,7 +18,21 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        // Dedicated, stable DEBUG keystore for this app (not a secret). Release signing
+        // is intentionally not configured here; it will come from CI secrets.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/hackeraietc-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
