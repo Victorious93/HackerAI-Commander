@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://hackerai.co/">
-    <img src="public/icon-512x512.png" width="150" alt="HackerAI Logo">
+    <img src="docs/assets/logo.png" width="150" alt="HackerAI Logo">
   </a>
 </p>
 
@@ -14,8 +14,6 @@
 [![Website](https://img.shields.io/badge/Website-hackerai.co-2d3748.svg)](https://hackerai.co)
 
 </div>
-
-<p align="center"><img src="docs/assets/logo.png" alt="hackeraiETC logo" width="160"></p>
 
 ## Getting started
 
