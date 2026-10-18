@@ -2,7 +2,7 @@ package ai.droidcommand.hackerai
 
 import kotlinx.serialization.Serializable
 
-// Ported from hackeraiETC/lib/ai/subagents/contracts.ts
+// Ported from HackerAI-Commander/lib/ai/subagents/contracts.ts
 // Each Zod constraint is reproduced in the corresponding init {} block.
 
 const val MAX_SUBAGENT_CONTEXT_REFS = 8

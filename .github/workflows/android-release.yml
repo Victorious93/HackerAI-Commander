@@ -20,7 +20,7 @@ jobs:
   release-apk:
     name: Build, verify & draft-release the signed APK
     # Never run on forks (their secrets are empty and they can't publish here).
-    if: github.repository == 'Victorious93/hackeraiETC'
+    if: github.repository == 'Victorious93/HackerAI-Commander'
     runs-on: ubuntu-latest
     permissions:
       contents: write # required ONLY to create the draft release and upload the asset

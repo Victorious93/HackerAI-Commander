@@ -1,6 +1,6 @@
 package ai.droidcommand.hackerai
 
-// Kotlin port of hackeraiETC/lib/ai/subagents/skill-ranker.ts
+// Kotlin port of HackerAI-Commander/lib/ai/subagents/skill-ranker.ts
 
 private fun tokenize(text: String): List<String> =
     text.lowercase().split(Regex("[^a-z]+")).filter { it.length > 1 }

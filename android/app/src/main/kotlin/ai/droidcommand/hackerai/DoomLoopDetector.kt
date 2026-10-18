@@ -4,7 +4,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 
-// Ported from hackeraiETC/lib/ai/subagents/doom-loop-detection.ts
+// Ported from HackerAI-Commander/lib/ai/subagents/doom-loop-detection.ts
 // (inferred from the constants and behavior described in HACKERAI_SOURCE_AUDIT.md)
 
 const val DOOM_LOOP_WARNING_THRESHOLD = 3

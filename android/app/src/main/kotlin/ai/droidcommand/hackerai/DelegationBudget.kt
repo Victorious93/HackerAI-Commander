@@ -1,6 +1,6 @@
 package ai.droidcommand.hackerai
 
-// Ported from hackeraiETC/lib/ai/subagents/delegation-budget.ts
+// Ported from HackerAI-Commander/lib/ai/subagents/delegation-budget.ts
 
 private const val MIN_SUBAGENT_BUDGET_FRACTION = 0.25
 

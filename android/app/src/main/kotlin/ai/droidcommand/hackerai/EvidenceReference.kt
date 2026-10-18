@@ -1,6 +1,6 @@
 package ai.droidcommand.hackerai
 
-// Ported from hackeraiETC/lib/ai/subagents/evidence-references.ts
+// Ported from HackerAI-Commander/lib/ai/subagents/evidence-references.ts
 
 private val FILE_PREFIX = "file:"
 private val UNC_PATTERN = Regex("""^//""")

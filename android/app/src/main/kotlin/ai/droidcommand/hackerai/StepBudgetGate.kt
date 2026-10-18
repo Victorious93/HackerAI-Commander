@@ -1,6 +1,6 @@
 package ai.droidcommand.hackerai
 
-// Ported from hackeraiETC/lib/ai/subagents/runtime-recovery.ts (step budget section)
+// Ported from HackerAI-Commander/lib/ai/subagents/runtime-recovery.ts (step budget section)
 
 const val SUBAGENT_RESULT_RECOVERY_STEP_RESERVE = 2
 
