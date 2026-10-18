@@ -1,6 +1,6 @@
 package ai.droidcommand.hackerai
 
-// Ported from hackeraiETC/lib/ai/subagents/runtime-recovery.ts
+// Ported from HackerAI-Commander/lib/ai/subagents/runtime-recovery.ts
 
 enum class ProviderErrorCategory {
     RATE_LIMITED,
