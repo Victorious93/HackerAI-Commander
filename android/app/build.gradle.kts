@@ -141,6 +141,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // API key encrypted at rest via Android Keystore + AES-256-GCM.
     implementation(libs.androidx.security.crypto)
+    // Shizuku / Sui: privileged (ADB/root) execution via the Shizuku service.
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.junit)

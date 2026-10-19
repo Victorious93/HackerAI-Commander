@@ -53,7 +53,7 @@ class AgentTaskRunnerTest {
         val identicalResponse = "I cannot help with that. Please try again."
         every { llmProvider.chat(any(), any(), any()) } returns identicalResponse
 
-        val input = ai.droidcommand.hackerai.CreateAgentInput(task = "test doom loop")
+        val input = ai.droidcommand.hackerai.CreateAgentInput(name = "doom-loop-subagent", task = "test doom loop")
         val cancelled = AtomicBoolean(false)
         val skills = emptyList<ai.droidcommand.hackerai.SubagentSkill>()
 
@@ -78,7 +78,7 @@ class AgentTaskRunnerTest {
             "unique response $callCount"
         }
 
-        val input = ai.droidcommand.hackerai.CreateAgentInput(task = "test step reserve")
+        val input = ai.droidcommand.hackerai.CreateAgentInput(name = "step-reserve-subagent", task = "test step reserve")
         val cancelled = AtomicBoolean(false)
 
         runner.executor.submit {
@@ -175,7 +175,7 @@ class AgentTaskRunnerTest {
         val expectedResponse = "Final security report: nothing found."
         every { llmProvider.chat(any(), any(), any()) } returns expectedResponse
 
-        val input = ai.droidcommand.hackerai.CreateAgentInput(task = "run to completion")
+        val input = ai.droidcommand.hackerai.CreateAgentInput(name = "run-to-completion-subagent", task = "run to completion")
         val cancelled = AtomicBoolean(false)
 
         runner.executor.submit {

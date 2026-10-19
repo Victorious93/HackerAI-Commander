@@ -30,3 +30,14 @@
 -keepclassmembernames class kotlinx.** {
     volatile <fields>;
 }
+
+# Shizuku / Sui — keep the privileged UserService AIDL stub/proxy and its impl,
+# plus the Shizuku/Sui runtime classes referenced reflectively across processes.
+-keep class ai.hackerai.companion.shizuku.IShizukuUserService { *; }
+-keep class ai.hackerai.companion.shizuku.IShizukuUserService$Stub { *; }
+-keep class ai.hackerai.companion.shizuku.IShizukuUserService$Stub$Proxy { *; }
+-keep class ai.hackerai.companion.shizuku.ShizukuUserService { *; }
+-keep class rikka.shizuku.** { *; }
+-keep class rikka.sui.** { *; }
+-dontwarn rikka.shizuku.**
+-dontwarn rikka.sui.**

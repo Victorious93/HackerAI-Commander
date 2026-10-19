@@ -1,6 +1,7 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
+import ai.hackerai.companion.shizuku.ShizukuManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,17 +16,21 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject lateinit var dependencyGuard: DependencyGuard
     @Inject lateinit var llmProvider: HttpLocalLlmProvider
+    @Inject lateinit var shizukuManager: ShizukuManager
 
     private var dcaInstalledAtCreate: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        shizukuManager.init()
         dcaInstalledAtCreate = dependencyGuard.isDcaInstalled()
         renderContent(dcaInstalledAtCreate)
     }
 
     override fun onResume() {
         super.onResume()
+        // Re-check Shizuku state after the user may have changed it elsewhere.
+        shizukuManager.refreshState()
         // Only recreate when DCA install state actually changed to avoid an
         // infinite recreation loop (recreate() → onResume() → recreate() …).
         if (dependencyGuard.isDcaInstalled() != dcaInstalledAtCreate) {
@@ -38,7 +43,11 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
-                        HackerAINavHost(llmProvider = llmProvider)
+                        HackerAINavHost(
+                            llmProvider = llmProvider,
+                            shizukuManager = shizukuManager,
+                            onRequestShizukuPermission = { shizukuManager.requestPermission(this) },
+                        )
                     } else {
                         DcaRequiredScreen()
                     }

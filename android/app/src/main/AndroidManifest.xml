@@ -3,6 +3,8 @@
 
     <uses-permission android:name="ai.droidcommand.permission.BIND_HACKERAI" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Shizuku permission used to request privileged (ADB/root) access at runtime. -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
     <application
         android:name=".HackerAIApp"
@@ -35,6 +37,19 @@
                 <action android:name="ai.hackerai.companion.IHackerAIService" />
             </intent-filter>
         </service>
+
+        <!--
+            Shizuku / Sui provider (per RikkaApps/Shizuku-API docs). Lets the
+            Shizuku server discover this app and deliver the privileged binder.
+            Authorities MUST be "${applicationId}.shizuku".
+        -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
     </application>
 
