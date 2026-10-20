@@ -75,3 +75,15 @@ runTaskInternal (background):
 | MainActivity              | IMPLEMENTED | Fixed infinite `recreate()` loop; injects DependencyGuard + HttpLocalLlmProvider   |
 | proguard-rules.pro        | IMPLEMENTED | Keeps AIDL stubs, Hilt entry points, serialization, and Tink classes                |
 | core-hackerai integration | IMPLEMENTED | Requires `./gradlew :core-hackerai:publishToMavenLocal` before AGP build            |
+
+## Remote-control envelope v1 (`remote/`)
+
+Protocol `BRIDGE_PROTOCOL_MAJOR = 1`, `BRIDGE_PROTOCOL_MINOR = 1` (spec: droidcommand-AI
+`docs/specs/REMOTE_CONTROL.md`, Appendix B). `BoundCompanionCommand` / `BoundCompanionResult`
+are Kotlin records using the existing `CommandEnvelope` / `ResultEnvelope` field names; no
+`.aidl` file changes (the live parcel bump happens together with the controller).
+`RemoteCommandGate` is decision-only: identity (Binder uid + `BIND_HACKERAI`) → external
+control (OFF by default) → replay/TTL → policy. Pentest/privileged ops (`agent.run`,
+`finding.validate`, `task.cancel`, `shizuku.shell`) are always destructive and return
+`confirmation_required`; the advisory `destructive` flag is never used to authorize.
+It is not yet wired into `IHackerAIService`.
