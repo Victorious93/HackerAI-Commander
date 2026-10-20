@@ -3,6 +3,7 @@ package ai.hackerai.companion.service
 import ai.droidcommand.companion.IHackerAIService
 import ai.hackerai.companion.AgentTaskConfirmPolicy
 import ai.hackerai.companion.DependencyGuard
+import ai.hackerai.companion.PendingAgentApprovals
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.remote.RemoteDispatcher
 import android.app.Service
@@ -18,6 +19,7 @@ class HackerAIBoundService : Service() {
     @Inject lateinit var remoteDispatcher: RemoteDispatcher
     @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
     @Inject lateinit var llmProvider: HttpLocalLlmProvider
+    @Inject lateinit var pendingAgentApprovals: PendingAgentApprovals
 
     private val binder =
         object : IHackerAIService.Stub() {
@@ -42,10 +44,26 @@ class HackerAIBoundService : Service() {
     fun runAgentTask(inputJson: String, confirmed: Boolean): String {
         if (!dependencyGuard.isDcaInstalled()) return errorJson("DroidCommand AI is not installed")
         agentTaskConfirmPolicy.blockReason(llmProvider.hasApiKey(), confirmed)?.let { code ->
-            return """{"ok":false,"error":"On-device confirm required before starting an agent task that uses the saved API key","code":"$code"}"""
+            val pending = pendingAgentApprovals.enqueue(inputJson)
+            return """{"ok":false,"error":"On-device confirm required before starting an agent task that uses the saved API key","code":"$code","pendingId":"${pending.id}"}"""
         }
         return agentTaskRunner.runTask(inputJson)
     }
+
+    /** Approve a queued AIDL start after on-device confirm. Unknown id → error JSON. */
+    fun approvePendingAgentTask(pendingId: String): String {
+        if (!dependencyGuard.isDcaInstalled()) return errorJson("DroidCommand AI is not installed")
+        val item = pendingAgentApprovals.take(pendingId)
+            ?: return errorJson("Unknown or already handled pendingId: $pendingId")
+        return runAgentTask(item.inputJson, confirmed = true)
+    }
+
+    fun denyPendingAgentTask(pendingId: String): String {
+        val ok = pendingAgentApprovals.deny(pendingId)
+        return if (ok) """{"ok":true,"denied":"$pendingId"}""" else errorJson("Unknown or already handled pendingId: $pendingId")
+    }
+
+    fun listPendingAgentTasks(): List<ai.hackerai.companion.PendingAgentTask> = pendingAgentApprovals.list()
 
     fun getSkillCatalog(): String {
         if (!dependencyGuard.isDcaInstalled()) return errorJson("DroidCommand AI is not installed")

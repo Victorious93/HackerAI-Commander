@@ -2,12 +2,16 @@ package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.remote.RemoteCommandGate
+import ai.hackerai.companion.service.AgentTaskRunner
 import ai.hackerai.companion.shizuku.ShizukuManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ai.hackerai.companion.ui.theme.HackerAITheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,13 +25,35 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
     @Inject lateinit var externalControlPrefs: ExternalControlPrefs
     @Inject lateinit var remoteCommandGate: RemoteCommandGate
+    @Inject lateinit var pendingAgentApprovals: PendingAgentApprovals
+    @Inject lateinit var agentTaskRunner: AgentTaskRunner
 
     private var dcaInstalledAtCreate: Boolean = false
+    private var pendingApprovals by mutableStateOf(emptyList<PendingAgentTask>())
+
+    private fun refreshApprovals() {
+        pendingApprovals = pendingAgentApprovals.list()
+    }
+
+    private fun approvePending(id: String) {
+        val item = pendingAgentApprovals.take(id) ?: return refreshApprovals()
+        // Same path as HackerAIBoundService.approvePendingAgentTask (confirmed=true).
+        if (agentTaskConfirmPolicy.blockReason(llmProvider.hasApiKey(), confirmed = true) == null) {
+            agentTaskRunner.runTask(item.inputJson)
+        }
+        refreshApprovals()
+    }
+
+    private fun denyPending(id: String) {
+        pendingAgentApprovals.deny(id)
+        refreshApprovals()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         shizukuManager.init()
         dcaInstalledAtCreate = dependencyGuard.isDcaInstalled()
+        refreshApprovals()
         renderContent(dcaInstalledAtCreate)
     }
 
@@ -58,6 +84,10 @@ class MainActivity : ComponentActivity() {
                                 externalControlPrefs.enabled = it
                                 remoteCommandGate.externalControlEnabled = it
                             },
+                            pendingApprovals = pendingApprovals,
+                            onRefreshApprovals = { refreshApprovals() },
+                            onApprovePending = { approvePending(it) },
+                            onDenyPending = { denyPending(it) },
                         )
                     } else {
                         DcaRequiredScreen()

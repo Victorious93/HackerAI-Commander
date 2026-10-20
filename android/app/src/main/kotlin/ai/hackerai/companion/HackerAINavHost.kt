@@ -2,6 +2,8 @@ package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.shizuku.ShizukuManager
+import ai.hackerai.companion.PendingAgentTask
+import ai.hackerai.companion.ui.ApprovalsScreen
 import ai.hackerai.companion.ui.HelpScreen
 import ai.hackerai.companion.ui.ShizukuScreen
 import ai.hackerai.companion.ui.SettingsScreen
@@ -10,6 +12,7 @@ import ai.hackerai.companion.ui.StatusScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
@@ -35,6 +38,7 @@ private const val ROUTE_SKILLS = "skills"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_PRIVILEGED = "privileged"
 private const val ROUTE_HELP = "help"
+private const val ROUTE_APPROVALS = "approvals"
 
 @Composable
 fun HackerAINavHost(
@@ -46,6 +50,10 @@ fun HackerAINavHost(
     onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
     externalControlEnabled: Boolean = false,
     onExternalControlEnabledChange: (Boolean) -> Unit = {},
+    pendingApprovals: List<PendingAgentTask> = emptyList(),
+    onRefreshApprovals: () -> Unit = {},
+    onApprovePending: (String) -> Unit = {},
+    onDenyPending: (String) -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -104,6 +112,18 @@ fun HackerAINavHost(
                     },
                 )
                 NavigationBarItem(
+                    icon = { Icon(Icons.Filled.Check, contentDescription = "Approvals") },
+                    label = { Text("Approve") },
+                    selected = currentDestination?.hierarchy?.any { it.route == ROUTE_APPROVALS } == true,
+                    onClick = {
+                        navController.navigate(ROUTE_APPROVALS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+                NavigationBarItem(
                     icon = { Icon(Icons.Filled.Info, contentDescription = "Help") },
                     label = { Text("Help") },
                     selected = currentDestination?.hierarchy?.any { it.route == ROUTE_HELP } == true,
@@ -151,6 +171,14 @@ fun HackerAINavHost(
                     onRequestPermission = onRequestShizukuPermission,
                     onRefresh = { shizukuManager.refreshState() },
                     onExec = { shizukuManager.exec(it) },
+                )
+            }
+            composable(ROUTE_APPROVALS) {
+                ApprovalsScreen(
+                    pending = pendingApprovals,
+                    onApprove = onApprovePending,
+                    onDeny = onDenyPending,
+                    onRefresh = onRefreshApprovals,
                 )
             }
             composable(ROUTE_HELP) {
