@@ -29,9 +29,37 @@ class RemoteCommandGate(
 
         /** Pentest / privileged ops: always destructive, always gated. */
         val DESTRUCTIVE_OPS = setOf("agent.run", "finding.validate", "task.cancel", "shizuku.shell")
+
+        /** Literal sourceNodeRef of the controller itself (REMOTE_CONTROL.md). */
+        const val CONTROLLER = "controller"
+
+        /**
+         * Backup ops (UNIFIED_BACKUP.md section 1): kind=action, remoteAllowed=false.
+         * Only the controller acting locally may call them; any relayed source gets capability_off.
+         */
+        val LOCAL_ONLY_OPS = setOf(ConfigBackup.OP_EXPORT, ConfigBackup.OP_IMPORT)
+
+        /** Ops that need an on-device confirm (unless dry-run). */
+        val CONFIRM_OPS = setOf(ConfigBackup.OP_IMPORT)
+
+        val DESCRIPTORS = listOf(
+            OpDescriptor(NodeStatus.OP, "read", remoteAllowed = true, requiresConfirm = false),
+            OpDescriptor(ConfigBackup.OP_EXPORT, "action", remoteAllowed = false, requiresConfirm = false),
+            OpDescriptor(ConfigBackup.OP_IMPORT, "action", remoteAllowed = false, requiresConfirm = true),
+        )
     }
 
-    fun evaluate(caller: CallerIdentity, sourceNodeRef: String, cmd: BoundCompanionCommand): BoundCompanionResult {
+    /**
+     * @param confirmed true only when the user approved this exact request on-device.
+     * @param dryRun validate without writing; such a request needs no confirm.
+     */
+    fun evaluate(
+        caller: CallerIdentity,
+        sourceNodeRef: String,
+        cmd: BoundCompanionCommand,
+        confirmed: Boolean = false,
+        dryRun: Boolean = false,
+    ): BoundCompanionResult {
         fun deny(status: Int, code: String, msg: String) =
             BoundCompanionResult(cmd.requestId, status, code, msg)
 
@@ -54,6 +82,15 @@ class RemoteCommandGate(
         seen.entries.removeIf { now - it.value > RETENTION_MS }
         if (seen.putIfAbsent(sourceNodeRef to cmd.nonce, now) != null) {
             return deny(BoundCompanionResult.STATUS_DENIED, RemoteErrorCode.REPLAY_DETECTED, "Nonce already seen")
+        }
+        if (cmd.command in LOCAL_ONLY_OPS) {
+            if (sourceNodeRef != CONTROLLER) {
+                return deny(BoundCompanionResult.STATUS_DENIED, RemoteErrorCode.CAPABILITY_OFF, "${cmd.command} is remoteAllowed=false")
+            }
+            if (cmd.command in CONFIRM_OPS && !dryRun && !confirmed) {
+                return deny(BoundCompanionResult.STATUS_DENIED, RemoteErrorCode.CONFIRMATION_REQUIRED, "${cmd.command} requires on-device confirm")
+            }
+            return BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_OK, "ok", "Allowed")
         }
         return when (cmd.command) {
             in READ_OPS -> BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_OK, "ok", "Allowed")

@@ -71,6 +71,9 @@ object RemoteErrorCode {
     const val EXTERNAL_CONTROL_DISABLED = "external_control_disabled"
     const val CONFIRMATION_REQUIRED = "confirmation_required"
     const val UNSUPPORTED_OP = "unsupported_op"
+    const val CAPABILITY_OFF = "capability_off"
+    const val NOT_FOUND = "not_found"
+    const val INTERNAL = "internal"
 }
 
 /**
@@ -81,3 +84,6 @@ data class CallerIdentity(val uid: Int, val holdsBindPermission: Boolean)
 
 internal fun isValidArgsJson(argsJson: String): Boolean =
     runCatching { Json.parseToJsonElement(argsJson) is JsonObject }.getOrDefault(false)
+
+/** `capabilities.get` per-op descriptor. */
+data class OpDescriptor(val name: String, val kind: String, val remoteAllowed: Boolean, val requiresConfirm: Boolean)
