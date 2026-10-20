@@ -2,6 +2,7 @@ package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.shizuku.ShizukuManager
+import ai.hackerai.companion.ui.HelpScreen
 import ai.hackerai.companion.ui.ShizukuScreen
 import ai.hackerai.companion.ui.SettingsScreen
 import ai.hackerai.companion.ui.SkillBrowserScreen
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -32,6 +34,7 @@ private const val ROUTE_STATUS = "status"
 private const val ROUTE_SKILLS = "skills"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_PRIVILEGED = "privileged"
+private const val ROUTE_HELP = "help"
 
 @Composable
 fun HackerAINavHost(
@@ -96,6 +99,18 @@ fun HackerAINavHost(
                         }
                     },
                 )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Filled.Info, contentDescription = "Help") },
+                    label = { Text("Help") },
+                    selected = currentDestination?.hierarchy?.any { it.route == ROUTE_HELP } == true,
+                    onClick = {
+                        navController.navigate(ROUTE_HELP) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
         },
     ) { innerPadding ->
@@ -129,6 +144,9 @@ fun HackerAINavHost(
                     onRefresh = { shizukuManager.refreshState() },
                     onExec = { shizukuManager.exec(it) },
                 )
+            }
+            composable(ROUTE_HELP) {
+                HelpScreen()
             }
         }
     }
