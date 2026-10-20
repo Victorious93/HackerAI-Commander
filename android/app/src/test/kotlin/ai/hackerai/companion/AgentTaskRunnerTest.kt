@@ -31,7 +31,7 @@ class AgentTaskRunnerTest {
     fun `runTask returns ok with taskId when input is valid`() {
         every { llmProvider.chat(any(), any(), any()) } returns "some response"
 
-        val result = runner.runTask("""{"task":"enumerate subdomains of example.com"}""")
+        val result = runner.runTask("""{"name":"test-subagent","task":"enumerate subdomains of example.com"}""")
 
         val json = Json.parseToJsonElement(result).jsonObject
         assertEquals("true", json["ok"]?.jsonPrimitive?.content)
@@ -103,7 +103,7 @@ class AgentTaskRunnerTest {
 
     @Test
     fun `validateFinding returns CONFIRMED for long reproduction hint`() {
-        val candidate = """{"title":"SQLi","reproduction_hint":"1. Open login page 2. Enter ' OR 1=1 -- in username field 3. Observe bypass"}"""
+        val candidate = """{"title":"SQLi","affected_asset":"https://example.com/login","weakness_class":"SQL injection","claimed_impact":"Authentication bypass","reproduction_hint":"1. Open login page 2. Enter ' OR 1=1 -- in username field 3. Observe bypass"}"""
         val result = runner.validateFinding(candidate)
 
         val json = Json.parseToJsonElement(result).jsonObject
@@ -113,7 +113,7 @@ class AgentTaskRunnerTest {
 
     @Test
     fun `validateFinding returns NEEDS_MORE_EVIDENCE for short hint`() {
-        val candidate = """{"title":"XSS","reproduction_hint":"short"}"""
+        val candidate = """{"title":"XSS","affected_asset":"https://example.com/search","weakness_class":"Reflected XSS","claimed_impact":"Script execution","reproduction_hint":"short"}"""
         val result = runner.validateFinding(candidate)
 
         val json = Json.parseToJsonElement(result).jsonObject
@@ -141,7 +141,7 @@ class AgentTaskRunnerTest {
             "response"
         }
 
-        val taskJson = runner.runTask("""{"task":"long running task"}""")
+        val taskJson = runner.runTask("""{"name":"test-subagent","task":"long running task"}""")
         val taskId = Json.parseToJsonElement(taskJson).jsonObject["taskId"]!!.jsonPrimitive.content
 
         // Give the task a moment to start
@@ -160,7 +160,7 @@ class AgentTaskRunnerTest {
             "response"
         }
 
-        val taskJson = runner.runTask("""{"task":"queued status test"}""")
+        val taskJson = runner.runTask("""{"name":"test-subagent","task":"queued status test"}""")
         val taskId = Json.parseToJsonElement(taskJson).jsonObject["taskId"]!!.jsonPrimitive.content
 
         val result = Json.parseToJsonElement(runner.getTaskResult(taskId)).jsonObject
@@ -201,7 +201,7 @@ class AgentTaskRunnerTest {
             "response"
         }
 
-        val taskJson = runner.runTask("""{"task":"cancel me"}""")
+        val taskJson = runner.runTask("""{"name":"test-subagent","task":"cancel me"}""")
         val taskId = Json.parseToJsonElement(taskJson).jsonObject["taskId"]!!.jsonPrimitive.content
 
         Thread.sleep(50)

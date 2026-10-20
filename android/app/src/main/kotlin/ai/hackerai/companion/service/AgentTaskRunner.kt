@@ -102,6 +102,8 @@ class AgentTaskRunner @Inject constructor(
             val response = try {
                 llmProvider.chat(systemPrompt = systemPrompt, userMessage = input.task, step = step)
             } catch (e: Exception) {
+                // cancelTask() interrupts the in-flight call; that is a cancellation, not an error.
+                if (cancelled.get() || e is InterruptedException) break
                 val category = classifyProviderError(
                     statusCode = null,
                     exceptionName = e.javaClass.simpleName,
