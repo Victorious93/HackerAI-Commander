@@ -57,7 +57,7 @@ class RemoteCommandGateTest {
         assertEquals(RemoteErrorCode.UNSUPPORTED_OP, gate().evaluate(trusted, "dca", cmd(command = "wipe")).code)
     }
 
-    @Test fun `confirmed destructive agent run is allowed; shizuku never is`() {
+    @Test fun `confirmed destructive agent run is allowed but shizuku never is`() {
         val g = gate()
         assertEquals(
             BoundCompanionResult.STATUS_OK,
