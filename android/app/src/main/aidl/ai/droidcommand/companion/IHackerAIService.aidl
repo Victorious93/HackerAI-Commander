@@ -26,4 +26,10 @@ interface IHackerAIService {
 
     // Health check. Returns "ok", "busy", or "no_llm_provider".
     String healthCheck();
+
+    // Fleet remote-control envelope v1 (BOUND_COMPANION JSON field map).
+    // envelopeJson is a BoundCompanionCommand; the reply is a BoundCompanionResult.
+    // Additive: existing clients ignore methods they do not call. Sync this file into
+    // droidcommand-AI/core-companion before the hub binds against it.
+    String executeEnvelope(String envelopeJson);
 }

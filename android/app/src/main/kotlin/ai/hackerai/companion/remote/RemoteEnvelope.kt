@@ -1,5 +1,6 @@
 package ai.hackerai.companion.remote
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
@@ -24,6 +25,7 @@ const val BRIDGE_PROTOCOL_MINOR = 1
  * | destructive     | destructive (advisory only, never used to authorize) |
  * | targetNodeRef   | targetNodeRef (this companion's node id, hub-side)    |
  */
+@Serializable
 data class BoundCompanionCommand(
     val requestId: String,
     val command: String,
@@ -46,6 +48,7 @@ data class BoundCompanionCommand(
  * (`requestId`, `status`, `code`, `message`, `payloadJson`). `code` uses the spec's
  * ratified error categories.
  */
+@Serializable
 data class BoundCompanionResult(
     val requestId: String,
     val status: Int,
@@ -86,4 +89,5 @@ internal fun isValidArgsJson(argsJson: String): Boolean =
     runCatching { Json.parseToJsonElement(argsJson) is JsonObject }.getOrDefault(false)
 
 /** `capabilities.get` per-op descriptor. */
+@Serializable
 data class OpDescriptor(val name: String, val kind: String, val remoteAllowed: Boolean, val requiresConfirm: Boolean)
