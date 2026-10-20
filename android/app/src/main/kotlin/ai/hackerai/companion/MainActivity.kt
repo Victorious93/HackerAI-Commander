@@ -1,9 +1,11 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
+import ai.hackerai.companion.shizuku.ShizukuState
 import ai.hackerai.companion.remote.RemoteCommandGate
 import ai.hackerai.companion.service.AgentTaskRunner
 import ai.hackerai.companion.shizuku.ShizukuManager
+import ai.hackerai.companion.shizuku.ShizukuState
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -74,6 +76,18 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
                         HackerAINavHost(
+                            companionStatus = CompanionStatus(
+                                dcaInstalled = isDcaInstalled,
+                                llmConfigured = llmProvider.hasApiKey(),
+                                shizukuState = shizukuManager.state.value,
+                                externalControlEnabled = externalControlPrefs.enabled,
+                                pendingApprovals = pendingApprovals.size,
+                                health = when {
+                                    !isDcaInstalled -> "dca_not_installed"
+                                    !llmProvider.hasApiKey() -> "no_llm_provider"
+                                    else -> "ok"
+                                },
+                            ),
                             llmProvider = llmProvider,
                             shizukuManager = shizukuManager,
                             onRequestShizukuPermission = { shizukuManager.requestPermission(this) },
