@@ -35,7 +35,7 @@ class RemoteDispatcherTest {
         every { llm.getEndpoint() } returns "https://api.example.com/v1/messages"
         externalPrefs = mockk(relaxed = true)
         every { externalPrefs.enabled } returns false
-        dispatcher = RemoteDispatcher(gate, runner, llm, CallingIdentitySource { CallerIdentity(10123, true) }, externalPrefs)
+        dispatcher = RemoteDispatcher(gate, runner, llm, CallingIdentitySource { CallerIdentity(10123, true) }, externalPrefs, PendingRemoteApprovals())
     }
 
     private fun env(command: String, argsJson: String = "{}", source: String? = null): String {
@@ -55,13 +55,28 @@ class RemoteDispatcherTest {
 
     private fun code(raw: String) = json.decodeFromString<BoundCompanionResult>(raw).code
 
-    @Test fun `destructive actionRefs never reach the runner`() {
-        for (op in listOf("agent.run", "finding.validate", "task.cancel", "shizuku.shell")) {
-            assertEquals(RemoteErrorCode.CONFIRMATION_REQUIRED, code(dispatcher.dispatch(env(op))))
+    @Test fun `destructive actionRefs queue or block without reaching the runner`() {
+        for (op in listOf("agent.run", "finding.validate", "task.cancel")) {
+            val r = json.decodeFromString<BoundCompanionResult>(dispatcher.dispatch(env(op)))
+            assertEquals(RemoteErrorCode.CONFIRMATION_REQUIRED, r.code)
+            assertTrue("pendingId" in r.payloadJson)
         }
+        assertEquals(RemoteErrorCode.CONFIRMATION_REQUIRED, code(dispatcher.dispatch(env("shizuku.shell"))))
+        assertFalse("pendingId" in json.decodeFromString<BoundCompanionResult>(dispatcher.dispatch(env("shizuku.shell", argsJson = """{"x":"1"}"""))).payloadJson)
         verify(exactly = 0) { runner.runTask(any()) }
         verify(exactly = 0) { runner.validateFinding(any()) }
         verify(exactly = 0) { runner.cancelTask(any()) }
+    }
+
+    @Test fun `approve pending agent run reaches the runner`() {
+        every { runner.runTask(any()) } returns """{"ok":true,"taskId":"t","status":"queued"}"""
+        val queued = json.decodeFromString<BoundCompanionResult>(
+            dispatcher.dispatch(env("agent.run", """{"name":"n","task":"scan"}""")),
+        )
+        val pendingId = json.parseToJsonElement(queued.payloadJson).jsonObject["pendingId"]!!.jsonPrimitive.content
+        val done = json.decodeFromString<BoundCompanionResult>(dispatcher.approvePending(pendingId))
+        assertEquals("ok", done.code)
+        verify(exactly = 1) { runner.runTask(any()) }
     }
 
     @Test fun `config export is local only and omits the api key`() {

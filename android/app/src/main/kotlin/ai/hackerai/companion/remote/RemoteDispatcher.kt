@@ -39,18 +39,18 @@ class RemoteDispatcher @Inject constructor(
     private val llm: HttpLocalLlmProvider,
     private val callingIdentity: CallingIdentitySource,
     private val externalControlPrefs: ExternalControlPrefs,
+    private val pendingRemoteApprovals: PendingRemoteApprovals,
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 
-    fun dispatch(envelopeJson: String): String {
+    fun dispatch(envelopeJson: String, confirmed: Boolean = false): String {
         val cmd = runCatching { json.decodeFromString<BoundCompanionCommand>(envelopeJson) }
             .getOrElse { return err(it.message ?: "Malformed BoundCompanionCommand") }
         val caller = callingIdentity.current()
         val args = runCatching { json.parseToJsonElement(cmd.argsJson).jsonObject }
             .getOrElse { return toJson(BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_INVALID, RemoteErrorCode.INVALID_PARAMETERS, "Bad argsJson")) }
         val dryRun = args["dryRun"]?.jsonPrimitive?.content == "true"
-        // Remote / AIDL path never auto-confirms. AIDL runAgentTask uses AgentTaskConfirmPolicy; remote agent.run never auto-confirms.
-        val confirmed = false
+        // Default false: remote callers never auto-confirm. On-device Approvals pass confirmed=true.
         val source = args["sourceNodeRef"]?.jsonPrimitive?.content ?: RemoteCommandGate.CONTROLLER
 
         return when (cmd.command) {
@@ -86,10 +86,67 @@ class RemoteDispatcher @Inject constructor(
             "health.check" -> gateThen(caller, source, cmd, dryRun, confirmed) {
                 ok(cmd, """{"health":"${agentTaskRunner.healthCheck()}"}""")
             }
-            // DCA-confirmed actionRefs: gated as destructive and NEVER executed without confirm.
-            "agent.run", "finding.validate", "task.cancel", "shizuku.shell" ->
+            "shizuku.shell" ->
+                // Local-only: never queue, never execute over the envelope.
                 toJson(gate.evaluate(caller, source, cmd, confirmed = false, dryRun = false))
+            "agent.run", "finding.validate", "task.cancel" -> {
+                val verdict = gate.evaluate(caller, source, cmd, confirmed = confirmed, dryRun = false)
+                if (verdict.status != BoundCompanionResult.STATUS_OK) {
+                    if (verdict.code == RemoteErrorCode.CONFIRMATION_REQUIRED && !confirmed) {
+                        val preview = when (cmd.command) {
+                            "agent.run" -> "agent.run: " + cmd.argsJson.take(80)
+                            "finding.validate" -> "finding.validate"
+                            else -> "task.cancel"
+                        }
+                        val pending = pendingRemoteApprovals.enqueue(cmd.command, envelopeJson, preview)
+                        return toJson(
+                            BoundCompanionResult(
+                                cmd.requestId, BoundCompanionResult.STATUS_DENIED,
+                                RemoteErrorCode.CONFIRMATION_REQUIRED,
+                                "Queued for on-device approval",
+                                """{"pendingId":"${pending.id}","command":"${cmd.command}"}""",
+                            ),
+                        )
+                    }
+                    return toJson(verdict)
+                }
+                toJson(executeDestructive(cmd, args))
+            }
             else -> toJson(gate.evaluate(caller, source, cmd, confirmed, dryRun))
+        }
+    }
+
+    /** Approve a queued remote destructive op after on-device confirm. */
+    fun approvePending(pendingId: String): String {
+        val item = pendingRemoteApprovals.take(pendingId)
+            ?: return err("Unknown or already handled pendingId: $pendingId")
+        return dispatch(item.envelopeJson, confirmed = true)
+    }
+
+    fun denyPending(pendingId: String): String {
+        val ok = pendingRemoteApprovals.deny(pendingId)
+        return if (ok) """{"requestId":"","status":0,"code":"ok","message":"Denied","payloadJson":"{\"denied\":\"$pendingId\"}"}"""
+        else err("Unknown or already handled pendingId: $pendingId")
+    }
+
+    private fun executeDestructive(cmd: BoundCompanionCommand, args: kotlinx.serialization.json.JsonObject): BoundCompanionResult {
+        return when (cmd.command) {
+            "agent.run" -> {
+                // Prefer nested inputJson; otherwise treat argsJson as CreateAgentInput.
+                val input = args["inputJson"]?.jsonPrimitive?.content ?: cmd.argsJson
+                ok(cmd, agentTaskRunner.runTask(input))
+            }
+            "finding.validate" -> {
+                val input = args["candidateJson"]?.jsonPrimitive?.content ?: cmd.argsJson
+                ok(cmd, agentTaskRunner.validateFinding(input))
+            }
+            "task.cancel" -> {
+                val taskId = args["taskId"]?.jsonPrimitive?.content
+                    ?: return BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_INVALID, RemoteErrorCode.INVALID_PARAMETERS, "taskId required")
+                agentTaskRunner.cancelTask(taskId)
+                ok(cmd, """{"cancelled":"$taskId"}""")
+            }
+            else -> BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_UNSUPPORTED, RemoteErrorCode.UNSUPPORTED_OP, cmd.command)
         }
     }
 

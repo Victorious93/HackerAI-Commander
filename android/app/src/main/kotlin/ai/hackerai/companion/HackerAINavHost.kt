@@ -4,6 +4,7 @@ import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.shizuku.ShizukuManager
 import ai.hackerai.companion.CompanionStatus
 import ai.hackerai.companion.PendingAgentTask
+import ai.hackerai.companion.remote.PendingRemoteOp
 import ai.hackerai.companion.ui.ApprovalsScreen
 import ai.hackerai.companion.ui.HelpScreen
 import ai.hackerai.companion.ui.ShizukuScreen
@@ -53,9 +54,12 @@ fun HackerAINavHost(
     externalControlEnabled: Boolean = false,
     onExternalControlEnabledChange: (Boolean) -> Unit = {},
     pendingApprovals: List<PendingAgentTask> = emptyList(),
+    remoteApprovals: List<PendingRemoteOp> = emptyList(),
     onRefreshApprovals: () -> Unit = {},
     onApprovePending: (String) -> Unit = {},
     onDenyPending: (String) -> Unit = {},
+    onApproveRemotePending: (String) -> Unit = {},
+    onDenyRemotePending: (String) -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -178,8 +182,11 @@ fun HackerAINavHost(
             composable(ROUTE_APPROVALS) {
                 ApprovalsScreen(
                     pending = pendingApprovals,
+                    remotePending = remoteApprovals,
                     onApprove = onApprovePending,
                     onDeny = onDenyPending,
+                    onApproveRemote = onApproveRemotePending,
+                    onDenyRemote = onDenyRemotePending,
                     onRefresh = onRefreshApprovals,
                 )
             }
