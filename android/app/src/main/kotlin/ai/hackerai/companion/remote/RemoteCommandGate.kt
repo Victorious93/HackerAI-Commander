@@ -105,7 +105,14 @@ class RemoteCommandGate(
         return when (cmd.command) {
             in READ_OPS -> BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_OK, "ok", "Allowed")
             // The advisory `destructive` flag is ignored: classification is by command only.
-            in DESTRUCTIVE_OPS -> deny(BoundCompanionResult.STATUS_DENIED, RemoteErrorCode.CONFIRMATION_REQUIRED, "Destructive op requires on-device approval")
+            in DESTRUCTIVE_OPS -> {
+                // shizuku.shell is local-only and never remotely confirmable.
+                if (cmd.command == "shizuku.shell" || !confirmed) {
+                    deny(BoundCompanionResult.STATUS_DENIED, RemoteErrorCode.CONFIRMATION_REQUIRED, "Destructive op requires on-device approval")
+                } else {
+                    BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_OK, "ok", "Allowed")
+                }
+            }
             else -> deny(BoundCompanionResult.STATUS_UNSUPPORTED, RemoteErrorCode.UNSUPPORTED_OP, "Unknown op ${cmd.command}")
         }
     }

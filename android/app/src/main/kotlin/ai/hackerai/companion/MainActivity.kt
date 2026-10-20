@@ -1,7 +1,10 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
+import ai.hackerai.companion.remote.PendingRemoteApprovals
+import ai.hackerai.companion.remote.PendingRemoteOp
 import ai.hackerai.companion.remote.RemoteCommandGate
+import ai.hackerai.companion.remote.RemoteDispatcher
 import ai.hackerai.companion.service.AgentTaskRunner
 import ai.hackerai.companion.shizuku.ShizukuManager
 import android.os.Bundle
@@ -27,12 +30,16 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var remoteCommandGate: RemoteCommandGate
     @Inject lateinit var pendingAgentApprovals: PendingAgentApprovals
     @Inject lateinit var agentTaskRunner: AgentTaskRunner
+    @Inject lateinit var pendingRemoteApprovals: PendingRemoteApprovals
+    @Inject lateinit var remoteDispatcher: RemoteDispatcher
 
     private var dcaInstalledAtCreate: Boolean = false
     private var pendingApprovals by mutableStateOf(emptyList<PendingAgentTask>())
+    private var remoteApprovals by mutableStateOf(emptyList<PendingRemoteOp>())
 
     private fun refreshApprovals() {
         pendingApprovals = pendingAgentApprovals.list()
+        remoteApprovals = pendingRemoteApprovals.list()
     }
 
     private fun approvePending(id: String) {
@@ -79,7 +86,7 @@ class MainActivity : ComponentActivity() {
                                 llmConfigured = llmProvider.hasApiKey(),
                                 shizukuState = shizukuManager.state.value,
                                 externalControlEnabled = externalControlPrefs.enabled,
-                                pendingApprovals = pendingApprovals.size,
+                                pendingApprovals = pendingApprovals.size + remoteApprovals.size,
                                 health = when {
                                     !isDcaInstalled -> "dca_not_installed"
                                     !llmProvider.hasApiKey() -> "no_llm_provider"
@@ -97,9 +104,18 @@ class MainActivity : ComponentActivity() {
                                 remoteCommandGate.externalControlEnabled = it
                             },
                             pendingApprovals = pendingApprovals,
+                            remoteApprovals = remoteApprovals,
                             onRefreshApprovals = { refreshApprovals() },
                             onApprovePending = { approvePending(it) },
                             onDenyPending = { denyPending(it) },
+                            onApproveRemotePending = {
+                                remoteDispatcher.approvePending(it)
+                                refreshApprovals()
+                            },
+                            onDenyRemotePending = {
+                                remoteDispatcher.denyPending(it)
+                                refreshApprovals()
+                            },
                         )
                     } else {
                         DcaRequiredScreen()
