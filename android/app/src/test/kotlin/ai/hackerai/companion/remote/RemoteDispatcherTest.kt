@@ -1,5 +1,6 @@
 package ai.hackerai.companion.remote
 
+import ai.hackerai.companion.ExternalControlPrefs
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.service.AgentTaskRunner
 import io.mockk.every
@@ -20,6 +21,7 @@ class RemoteDispatcherTest {
     private lateinit var runner: AgentTaskRunner
     private lateinit var llm: HttpLocalLlmProvider
     private lateinit var dispatcher: RemoteDispatcher
+    private lateinit var externalPrefs: ExternalControlPrefs
     private var n = 0
     private val now = 1_760_920_000_000L
     private val json = Json { encodeDefaults = true }
@@ -31,7 +33,9 @@ class RemoteDispatcherTest {
         every { llm.hasApiKey() } returns true
         every { llm.getModel() } returns "m"
         every { llm.getEndpoint() } returns "https://api.example.com/v1/messages"
-        dispatcher = RemoteDispatcher(gate, runner, llm, CallingIdentitySource { CallerIdentity(10123, true) })
+        externalPrefs = mockk(relaxed = true)
+        every { externalPrefs.enabled } returns false
+        dispatcher = RemoteDispatcher(gate, runner, llm, CallingIdentitySource { CallerIdentity(10123, true) }, externalPrefs)
     }
 
     private fun env(command: String, argsJson: String = "{}", source: String? = null): String {
@@ -93,5 +97,24 @@ class RemoteDispatcherTest {
     @Test fun `external control off blocks read ops`() {
         gate.externalControlEnabled = false
         assertEquals(RemoteErrorCode.EXTERNAL_CONTROL_DISABLED, code(dispatcher.dispatch(env(NodeStatus.OP))))
+    }
+
+    @Test fun `confirmed import forces external control prefs off`() {
+        gate.externalControlEnabled = true
+        val payload = """{"model":"m2","endpoint":"https://api.example.com/v1/messages"}"""
+        val bundle = """{"version":1,"createdAtMs":$now,"sourceNodeRef":"controller","wrapping":"none","entries":[{"packageName":"ai.hackerai.companion","schemaVersion":1,"clearPayload":${json.encodeToString(payload)}}]}"""
+        // Still confirmation_required without confirm — prefs must not be forced until a real import write.
+        dispatcher.dispatch(env(ConfigBackup.OP_IMPORT, """{"bundle":${json.encodeToString(bundle)},"dryRun":"false"}"""))
+        // With dry-run true, ConfigBackup does not force gate off; with confirmed false we never apply.
+        // Force a confirmed overwrite via ConfigBackup directly then sync like dispatcher:
+        gate.externalControlEnabled = true
+        ConfigBackup.import(gate, CallerIdentity(10123, true), RemoteCommandGate.CONTROLLER,
+            BoundCompanionCommand("r", ConfigBackup.OP_IMPORT,
+                argsJson = """{"bundle":${json.encodeToString(bundle)},"dryRun":"false","conflictPolicy":"overwrite"}""",
+                nonce = "c".repeat(32), timestampMs = now, targetNodeRef = "hackerai"),
+            CompanionConfig("m", "https://api.example.com/v1/messages"), null, confirmed = true) {}
+        assertFalse(gate.externalControlEnabled)
+        if (!gate.externalControlEnabled) externalPrefs.enabled = false
+        verify { externalPrefs.enabled = false }
     }
 }

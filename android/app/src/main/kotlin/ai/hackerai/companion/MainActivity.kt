@@ -1,6 +1,7 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
+import ai.hackerai.companion.remote.RemoteCommandGate
 import ai.hackerai.companion.shizuku.ShizukuManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,6 +19,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var llmProvider: HttpLocalLlmProvider
     @Inject lateinit var shizukuManager: ShizukuManager
     @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
+    @Inject lateinit var externalControlPrefs: ExternalControlPrefs
+    @Inject lateinit var remoteCommandGate: RemoteCommandGate
 
     private var dcaInstalledAtCreate: Boolean = false
 
@@ -50,6 +53,11 @@ class MainActivity : ComponentActivity() {
                             onRequestShizukuPermission = { shizukuManager.requestPermission(this) },
                             requireAgentTaskConfirm = agentTaskConfirmPolicy.requireConfirm,
                             onRequireAgentTaskConfirmChange = { agentTaskConfirmPolicy.requireConfirm = it },
+                            externalControlEnabled = externalControlPrefs.enabled,
+                            onExternalControlEnabledChange = {
+                                externalControlPrefs.enabled = it
+                                remoteCommandGate.externalControlEnabled = it
+                            },
                         )
                     } else {
                         DcaRequiredScreen()
