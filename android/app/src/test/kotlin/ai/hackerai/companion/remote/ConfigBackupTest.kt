@@ -37,12 +37,16 @@ class ConfigBackupTest {
     }
 
     @Test fun `export never contains keys or chat`() {
-        listOf(exportBundle(clear = true), exportBundle()).forEach { p ->
+        // Substring checks on the clear form; ciphertext is random base64 and could match by chance.
+        listOf(exportBundle(clear = true)).forEach { p ->
             val l = p.lowercase()
             listOf("api_key", "apikey", "sk-", "token", "secret", "password", "chat", "prompt", "externalcontrol")
                 .forEach { assertFalse("leaked $it", it in l) }
         }
         assertTrue("model" in exportBundle(clear = true))
+        val enc = exportBundle()
+        assertTrue("\"ciphertext\":\"v1." in enc)
+        assertFalse("clearPayload" in enc || "model" in enc)
     }
 
     @Test fun `export refuses a credential-bearing endpoint`() {
