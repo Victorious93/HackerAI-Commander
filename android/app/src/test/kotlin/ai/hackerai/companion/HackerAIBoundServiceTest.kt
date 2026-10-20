@@ -27,6 +27,7 @@ class HackerAIBoundServiceTest {
     private lateinit var remoteDispatcher: RemoteDispatcher
     private lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
     private lateinit var llmProvider: HttpLocalLlmProvider
+    private lateinit var pendingAgentApprovals: PendingAgentApprovals
     private lateinit var service: HackerAIBoundService
 
     @Before
@@ -38,12 +39,14 @@ class HackerAIBoundServiceTest {
         llmProvider = mockk(relaxed = true)
         every { agentTaskConfirmPolicy.blockReason(any(), any()) } returns null
         every { llmProvider.hasApiKey() } returns true
+        pendingAgentApprovals = PendingAgentApprovals()
         service = HackerAIBoundService()
         service.agentTaskRunner = agentTaskRunner
         service.dependencyGuard = dependencyGuard
         service.remoteDispatcher = remoteDispatcher
         service.agentTaskConfirmPolicy = agentTaskConfirmPolicy
         service.llmProvider = llmProvider
+        service.pendingAgentApprovals = pendingAgentApprovals
     }
 
     @Test
@@ -159,7 +162,25 @@ class HackerAIBoundServiceTest {
 
         assertTrue(result.contains("\"ok\":false"))
         assertTrue(result.contains("confirmation_required"))
+        assertTrue(result.contains("pendingId"))
+        assertEquals(1, pendingAgentApprovals.size())
         verify(exactly = 0) { agentTaskRunner.runTask(any()) }
+    }
+
+    @Test
+    fun `approvePendingAgentTask runs with confirm`() {
+        every { dependencyGuard.isDcaInstalled() } returns true
+        every { llmProvider.hasApiKey() } returns true
+        every { agentTaskConfirmPolicy.blockReason(true, false) } returns AgentTaskConfirmPolicy.CODE_CONFIRMATION_REQUIRED
+        every { agentTaskConfirmPolicy.blockReason(true, true) } returns null
+        every { agentTaskRunner.runTask(any()) } returns """{"ok":true,"taskId":"x","status":"queued"}"""
+
+        service.runAgentTask("""{"name":"t","task":"scan"}""")
+        val id = pendingAgentApprovals.list().single().id
+        val result = service.approvePendingAgentTask(id)
+        assertTrue(result.contains("\"ok\":true"))
+        assertEquals(0, pendingAgentApprovals.size())
+        verify(exactly = 1) { agentTaskRunner.runTask(any()) }
     }
 
     @Test
