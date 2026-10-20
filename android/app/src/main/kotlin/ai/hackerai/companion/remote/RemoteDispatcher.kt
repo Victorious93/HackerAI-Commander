@@ -116,11 +116,43 @@ class RemoteDispatcher @Inject constructor(
         }
     }
 
-    /** Approve a queued remote destructive op after on-device confirm. */
+    /**
+     * Approve a queued remote destructive op after on-device confirm.
+     * Does not re-enter the replay cache: the original nonce was already recorded when the
+     * request was queued. Re-checks identity + external control, then executes.
+     */
     fun approvePending(pendingId: String): String {
         val item = pendingRemoteApprovals.take(pendingId)
             ?: return err("Unknown or already handled pendingId: $pendingId")
-        return dispatch(item.envelopeJson, confirmed = true)
+        val cmd = runCatching { json.decodeFromString<BoundCompanionCommand>(item.envelopeJson) }
+            .getOrElse { return err(it.message ?: "Malformed queued envelope") }
+        if (cmd.command == "shizuku.shell") {
+            return toJson(
+                BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_DENIED,
+                    RemoteErrorCode.CONFIRMATION_REQUIRED, "shizuku.shell is not remotely confirmable"),
+            )
+        }
+        val caller = callingIdentity.current()
+        if (!caller.holdsBindPermission) {
+            return toJson(
+                BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_DENIED,
+                    RemoteErrorCode.UNAUTHORIZED, "Caller lacks BIND_HACKERAI"),
+            )
+        }
+        if (!gate.externalControlEnabled) {
+            return toJson(
+                BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_DENIED,
+                    RemoteErrorCode.EXTERNAL_CONTROL_DISABLED, "External control is off"),
+            )
+        }
+        val args = runCatching { json.parseToJsonElement(cmd.argsJson).jsonObject }
+            .getOrElse {
+                return toJson(
+                    BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_INVALID,
+                        RemoteErrorCode.INVALID_PARAMETERS, "Bad argsJson"),
+                )
+            }
+        return toJson(executeDestructive(cmd, args))
     }
 
     fun denyPending(pendingId: String): String {
