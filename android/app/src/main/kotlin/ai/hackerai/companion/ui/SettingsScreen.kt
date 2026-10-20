@@ -154,7 +154,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(24.dp))
             Text("Endpoint", style = MaterialTheme.typography.titleSmall)
             Text(
-                text = "Override to point at a local OpenAI-compatible server (e.g. Ollama, LM Studio).",
+                text = "Requests always use the Anthropic Messages format (x-api-key + anthropic-version headers, /v1/messages body). Stock Ollama and LM Studio OpenAI endpoints will reject them. Use the Anthropic API, or a proxy that speaks Anthropic Messages (for example LiteLLM / an Anthropic-compatible gateway) in front of a local model.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
