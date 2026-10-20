@@ -1,11 +1,9 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
-import ai.hackerai.companion.shizuku.ShizukuState
 import ai.hackerai.companion.remote.RemoteCommandGate
 import ai.hackerai.companion.service.AgentTaskRunner
 import ai.hackerai.companion.shizuku.ShizukuManager
-import ai.hackerai.companion.shizuku.ShizukuState
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
