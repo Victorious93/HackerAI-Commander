@@ -9,7 +9,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+// HackerAIBoundService extends android.app.Service and its binder extends Binder; plain-JVM
+// android.jar stubs throw "Method ... not mocked", so construct it under Robolectric. A plain
+// Application avoids starting the Hilt app; injection is replaced by setting the fields.
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = android.app.Application::class)
 class HackerAIBoundServiceTest {
 
     private lateinit var agentTaskRunner: AgentTaskRunner

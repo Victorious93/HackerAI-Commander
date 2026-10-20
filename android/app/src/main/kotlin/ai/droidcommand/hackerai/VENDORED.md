@@ -29,3 +29,12 @@ is how the app calls it.
 
 If/when `core-hackerai` is published to a real Maven repository, these vendored
 files can be deleted and the dependency restored.
+
+## Skill catalog resource
+
+`SkillCatalog` loads `/ai/droidcommand/hackerai/strix-skill-catalog.generated.json` from
+the classpath. It is vendored at
+`android/app/src/main/resources/ai/droidcommand/hackerai/` as a byte-for-byte copy of
+`lib/ai/subagents/skills/strix-skill-catalog.generated.json` (Strix source commit
+`cbb0f57058a97cc78d19c3cdd0171d1b41d498fd`). Without it, `getSkillCatalog` returned an error
+and `runTask` threw. When `sync-strix-skills` regenerates the web copy, re-copy it here.
