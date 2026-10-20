@@ -6,9 +6,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import ai.hackerai.companion.ui.theme.HackerAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
     private fun renderContent(isDcaInstalled: Boolean) {
         setContent {
-            MaterialTheme {
+            HackerAITheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
                         HackerAINavHost(

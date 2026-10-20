@@ -33,9 +33,10 @@ interface LocalLlmProvider {
  * HTTP-backed LLM provider. Stores the API key in [EncryptedSharedPreferences]
  * (Android Keystore + AES-256-GCM). Never writes the key to disk in plaintext.
  *
- * The endpoint defaults to the Anthropic Messages API. The user can override
- * it in Settings to point at an OpenAI-compatible local endpoint (e.g. LM Studio,
- * Ollama) or a self-hosted proxy.
+ * The endpoint defaults to the Anthropic Messages API. The wire format is always
+ * Anthropic Messages (`x-api-key`, `anthropic-version`, messages body) — not OpenAI
+ * chat/completions. Pointing Settings at stock Ollama/LM Studio OpenAI URLs will fail
+ * unless a proxy translates Anthropic → the local server.
  *
  * NOT RUNTIME VERIFIED — no Android SDK in this build environment.
  */
