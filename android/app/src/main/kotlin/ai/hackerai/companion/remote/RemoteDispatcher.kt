@@ -1,5 +1,6 @@
 package ai.hackerai.companion.remote
 
+import ai.hackerai.companion.ExternalControlPrefs
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.service.AgentTaskRunner
 import android.os.Binder
@@ -37,6 +38,7 @@ class RemoteDispatcher @Inject constructor(
     private val agentTaskRunner: AgentTaskRunner,
     private val llm: HttpLocalLlmProvider,
     private val callingIdentity: CallingIdentitySource,
+    private val externalControlPrefs: ExternalControlPrefs,
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 
@@ -65,12 +67,13 @@ class RemoteDispatcher @Inject constructor(
             }
             ConfigBackup.OP_IMPORT -> {
                 val current = CompanionConfig(llm.getModel(), llm.getEndpoint())
-                toJson(
-                    ConfigBackup.import(gate, caller, source, cmd, current, key = null, confirmed = confirmed) { next ->
-                        llm.setModel(next.model)
-                        llm.setEndpoint(next.endpoint)
-                    },
-                )
+                val result = ConfigBackup.import(gate, caller, source, cmd, current, key = null, confirmed = confirmed) { next ->
+                    llm.setModel(next.model)
+                    llm.setEndpoint(next.endpoint)
+                }
+                // Spec: never leave remote.command / external control ON after import.
+                if (!gate.externalControlEnabled) externalControlPrefs.enabled = false
+                toJson(result)
             }
             "skills.catalog" -> gateThen(caller, source, cmd, dryRun, confirmed) {
                 ok(cmd, agentTaskRunner.getSkillCatalog())

@@ -42,6 +42,8 @@ fun SettingsScreen(
     onSaveEndpoint: (String) -> Unit,
     requireAgentTaskConfirm: Boolean = true,
     onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
+    externalControlEnabled: Boolean = false,
+    onExternalControlEnabledChange: (Boolean) -> Unit = {},
 ) {
     var apiKeyDraft by remember { mutableStateOf("") }
     var modelDraft by remember { mutableStateOf(currentModel) }
@@ -129,6 +131,30 @@ fun SettingsScreen(
                 Switch(
                     checked = requireAgentTaskConfirm,
                     onCheckedChange = onRequireAgentTaskConfirmChange,
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text("Fleet remote control", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "OFF by default. When on, a bound controller holding BIND_HACKERAI may call executeEnvelope ops (status, catalog, …). Destructive ops still need on-device confirm. Config import never turns this on.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "Allow external control",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                )
+                Switch(
+                    checked = externalControlEnabled,
+                    onCheckedChange = onExternalControlEnabledChange,
                 )
             }
 

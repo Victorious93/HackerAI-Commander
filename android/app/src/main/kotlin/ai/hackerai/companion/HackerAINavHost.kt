@@ -44,6 +44,8 @@ fun HackerAINavHost(
     onRequestShizukuPermission: () -> Unit,
     requireAgentTaskConfirm: Boolean = true,
     onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
+    externalControlEnabled: Boolean = false,
+    onExternalControlEnabledChange: (Boolean) -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -138,6 +140,8 @@ fun HackerAINavHost(
                     onSaveEndpoint = { llmProvider.setEndpoint(it) },
                     requireAgentTaskConfirm = requireAgentTaskConfirm,
                     onRequireAgentTaskConfirmChange = onRequireAgentTaskConfirmChange,
+                    externalControlEnabled = externalControlEnabled,
+                    onExternalControlEnabledChange = onExternalControlEnabledChange,
                 )
             }
             composable(ROUTE_PRIVILEGED) {
