@@ -25,7 +25,7 @@ class RemoteCommandGate(
         private const val RETENTION_MS = 600_000L
 
         /** Read-only ops that may be served remotely without confirmation. */
-        val READ_OPS = setOf("capabilities.get", "skills.catalog", "task.result", "health.check")
+        val READ_OPS = setOf("capabilities.get", NodeStatus.OP, "skills.catalog", "task.result", "health.check")
 
         /** Pentest / privileged ops: always destructive, always gated. */
         val DESTRUCTIVE_OPS = setOf("agent.run", "finding.validate", "task.cancel", "shizuku.shell")
