@@ -121,7 +121,6 @@ class HackerAIBoundServiceTest {
         assertTrue(result.contains("\"ok\":false"))
         assertTrue(result.contains("DroidCommand AI"))
     }
-}
 
     @Test
     fun `executeEnvelope delegates to dispatcher when DCA installed`() {
