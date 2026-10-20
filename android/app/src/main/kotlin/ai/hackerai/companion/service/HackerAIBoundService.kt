@@ -2,6 +2,7 @@ package ai.hackerai.companion.service
 
 import ai.droidcommand.companion.IHackerAIService
 import ai.hackerai.companion.DependencyGuard
+import ai.hackerai.companion.remote.RemoteDispatcher
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -12,6 +13,7 @@ import javax.inject.Inject
 class HackerAIBoundService : Service() {
     @Inject lateinit var agentTaskRunner: AgentTaskRunner
     @Inject lateinit var dependencyGuard: DependencyGuard
+    @Inject lateinit var remoteDispatcher: RemoteDispatcher
 
     private val binder =
         object : IHackerAIService.Stub() {
@@ -21,6 +23,7 @@ class HackerAIBoundService : Service() {
             override fun cancelTask(taskId: String) = agentTaskRunner.cancelTask(taskId)
             override fun getTaskResult(taskId: String): String = this@HackerAIBoundService.getTaskResult(taskId)
             override fun healthCheck(): String = this@HackerAIBoundService.healthCheck()
+            override fun executeEnvelope(envelopeJson: String): String = this@HackerAIBoundService.executeEnvelope(envelopeJson)
         }
 
     override fun onBind(intent: Intent): IBinder = binder
@@ -48,6 +51,15 @@ class HackerAIBoundService : Service() {
     fun healthCheck(): String {
         if (!dependencyGuard.isDcaInstalled()) return "dca_not_installed"
         return agentTaskRunner.healthCheck()
+    }
+
+    /**
+     * Fleet remote-control envelope entry point. DependencyGuard still applies; the gate then
+     * enforces identity / external-control / replay / confirm. Destructive actionRefs never run.
+     */
+    fun executeEnvelope(envelopeJson: String): String {
+        if (!dependencyGuard.isDcaInstalled()) return errorJson("DroidCommand AI is not installed")
+        return remoteDispatcher.dispatch(envelopeJson)
     }
 
     private fun errorJson(message: String): String {

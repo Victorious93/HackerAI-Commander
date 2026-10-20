@@ -1,6 +1,7 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.service.AgentTaskRunner
+import ai.hackerai.companion.remote.RemoteDispatcher
 import ai.hackerai.companion.service.HackerAIBoundService
 import io.mockk.every
 import io.mockk.mockk
@@ -22,15 +23,18 @@ class HackerAIBoundServiceTest {
 
     private lateinit var agentTaskRunner: AgentTaskRunner
     private lateinit var dependencyGuard: DependencyGuard
+    private lateinit var remoteDispatcher: RemoteDispatcher
     private lateinit var service: HackerAIBoundService
 
     @Before
     fun setUp() {
         agentTaskRunner = mockk(relaxed = true)
         dependencyGuard = mockk()
+        remoteDispatcher = mockk(relaxed = true)
         service = HackerAIBoundService()
         service.agentTaskRunner = agentTaskRunner
         service.dependencyGuard = dependencyGuard
+        service.remoteDispatcher = remoteDispatcher
     }
 
     @Test
@@ -116,5 +120,23 @@ class HackerAIBoundServiceTest {
 
         assertTrue(result.contains("\"ok\":false"))
         assertTrue(result.contains("DroidCommand AI"))
+    }
+
+    @Test
+    fun `executeEnvelope delegates to dispatcher when DCA installed`() {
+        every { dependencyGuard.isDcaInstalled() } returns true
+        every { remoteDispatcher.dispatch(any()) } returns """{"requestId":"r","status":0,"code":"ok","message":"Allowed","payloadJson":"{}"}"""
+        val envelope = """{"requestId":"r","command":"capabilities.get","argsJson":"{}","nonce":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","timestampMs":1,"ttlMs":120000,"destructive":false,"targetNodeRef":"hackerai"}"""
+        val result = service.executeEnvelope(envelope)
+        assertTrue(result.contains("\"ok\""))
+        verify(exactly = 1) { remoteDispatcher.dispatch(envelope) }
+    }
+
+    @Test
+    fun `executeEnvelope returns error when DCA absent`() {
+        every { dependencyGuard.isDcaInstalled() } returns false
+        val result = service.executeEnvelope("{}")
+        assertTrue(result.contains("\"ok\":false"))
+        verify(exactly = 0) { remoteDispatcher.dispatch(any()) }
     }
 }
