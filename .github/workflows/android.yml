@@ -47,6 +47,10 @@ jobs:
         working-directory: android
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
+      - name: Run JVM unit tests
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+
       - name: Verify debug APK signer SHA-256
         working-directory: android
         run: |
