@@ -1,6 +1,7 @@
 package ai.hackerai.companion
 
 import ai.hackerai.companion.service.AgentTaskRunner
+import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.remote.RemoteDispatcher
 import ai.hackerai.companion.service.HackerAIBoundService
 import io.mockk.every
@@ -24,6 +25,8 @@ class HackerAIBoundServiceTest {
     private lateinit var agentTaskRunner: AgentTaskRunner
     private lateinit var dependencyGuard: DependencyGuard
     private lateinit var remoteDispatcher: RemoteDispatcher
+    private lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
+    private lateinit var llmProvider: HttpLocalLlmProvider
     private lateinit var service: HackerAIBoundService
 
     @Before
@@ -31,10 +34,16 @@ class HackerAIBoundServiceTest {
         agentTaskRunner = mockk(relaxed = true)
         dependencyGuard = mockk()
         remoteDispatcher = mockk(relaxed = true)
+        agentTaskConfirmPolicy = mockk(relaxed = true)
+        llmProvider = mockk(relaxed = true)
+        every { agentTaskConfirmPolicy.blockReason(any(), any()) } returns null
+        every { llmProvider.hasApiKey() } returns true
         service = HackerAIBoundService()
         service.agentTaskRunner = agentTaskRunner
         service.dependencyGuard = dependencyGuard
         service.remoteDispatcher = remoteDispatcher
+        service.agentTaskConfirmPolicy = agentTaskConfirmPolicy
+        service.llmProvider = llmProvider
     }
 
     @Test
@@ -138,5 +147,31 @@ class HackerAIBoundServiceTest {
         val result = service.executeEnvelope("{}")
         assertTrue(result.contains("\"ok\":false"))
         verify(exactly = 0) { remoteDispatcher.dispatch(any()) }
+    }
+
+    @Test
+    fun `runAgentTask returns confirmation_required when policy blocks`() {
+        every { dependencyGuard.isDcaInstalled() } returns true
+        every { llmProvider.hasApiKey() } returns true
+        every { agentTaskConfirmPolicy.blockReason(true, false) } returns AgentTaskConfirmPolicy.CODE_CONFIRMATION_REQUIRED
+
+        val result = service.runAgentTask("""{"name":"t","task":"scan"}""")
+
+        assertTrue(result.contains("\"ok\":false"))
+        assertTrue(result.contains("confirmation_required"))
+        verify(exactly = 0) { agentTaskRunner.runTask(any()) }
+    }
+
+    @Test
+    fun `runAgentTask with confirmed true reaches the runner`() {
+        every { dependencyGuard.isDcaInstalled() } returns true
+        every { llmProvider.hasApiKey() } returns true
+        every { agentTaskConfirmPolicy.blockReason(true, true) } returns null
+        every { agentTaskRunner.runTask(any()) } returns """{"ok":true,"taskId":"x","status":"queued"}"""
+
+        val result = service.runAgentTask("""{"name":"t","task":"scan"}""", confirmed = true)
+
+        assertTrue(result.contains("\"ok\":true"))
+        verify(exactly = 1) { agentTaskRunner.runTask(any()) }
     }
 }

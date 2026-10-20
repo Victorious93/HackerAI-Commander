@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var dependencyGuard: DependencyGuard
     @Inject lateinit var llmProvider: HttpLocalLlmProvider
     @Inject lateinit var shizukuManager: ShizukuManager
+    @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
 
     private var dcaInstalledAtCreate: Boolean = false
 
@@ -47,6 +48,8 @@ class MainActivity : ComponentActivity() {
                             llmProvider = llmProvider,
                             shizukuManager = shizukuManager,
                             onRequestShizukuPermission = { shizukuManager.requestPermission(this) },
+                            requireAgentTaskConfirm = agentTaskConfirmPolicy.requireConfirm,
+                            onRequireAgentTaskConfirmChange = { agentTaskConfirmPolicy.requireConfirm = it },
                         )
                     } else {
                         DcaRequiredScreen()

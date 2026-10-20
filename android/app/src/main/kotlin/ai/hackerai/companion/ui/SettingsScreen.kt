@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +40,8 @@ fun SettingsScreen(
     onClearApiKey: () -> Unit,
     onSaveModel: (String) -> Unit,
     onSaveEndpoint: (String) -> Unit,
+    requireAgentTaskConfirm: Boolean = true,
+    onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
 ) {
     var apiKeyDraft by remember { mutableStateOf("") }
     var modelDraft by remember { mutableStateOf(currentModel) }
@@ -101,6 +106,30 @@ fun SettingsScreen(
                 ) {
                     Text("Save Key")
                 }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text("Agent tasks", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "When on (default), starting an agent task that would use the saved API key needs an on-device confirm. Remote agent.run is always blocked by the fleet gate and never auto-runs.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "Require confirm for agent tasks",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                )
+                Switch(
+                    checked = requireAgentTaskConfirm,
+                    onCheckedChange = onRequireAgentTaskConfirmChange,
+                )
             }
 
             Spacer(Modifier.height(24.dp))

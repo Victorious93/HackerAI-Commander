@@ -1,7 +1,9 @@
 package ai.hackerai.companion.service
 
 import ai.droidcommand.companion.IHackerAIService
+import ai.hackerai.companion.AgentTaskConfirmPolicy
 import ai.hackerai.companion.DependencyGuard
+import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.remote.RemoteDispatcher
 import android.app.Service
 import android.content.Intent
@@ -14,6 +16,8 @@ class HackerAIBoundService : Service() {
     @Inject lateinit var agentTaskRunner: AgentTaskRunner
     @Inject lateinit var dependencyGuard: DependencyGuard
     @Inject lateinit var remoteDispatcher: RemoteDispatcher
+    @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
+    @Inject lateinit var llmProvider: HttpLocalLlmProvider
 
     private val binder =
         object : IHackerAIService.Stub() {
@@ -28,8 +32,18 @@ class HackerAIBoundService : Service() {
 
     override fun onBind(intent: Intent): IBinder = binder
 
-    fun runAgentTask(inputJson: String): String {
+    fun runAgentTask(inputJson: String): String = runAgentTask(inputJson, confirmed = false)
+
+    /**
+     * Starts an agent task. When [AgentTaskConfirmPolicy.requireConfirm] is on (default) and an
+     * API key is configured, [confirmed] must be true — set only after an on-device approve.
+     * Controllers calling via AIDL always hit confirmed=false. Remote `agent.run` never reaches here.
+     */
+    fun runAgentTask(inputJson: String, confirmed: Boolean): String {
         if (!dependencyGuard.isDcaInstalled()) return errorJson("DroidCommand AI is not installed")
+        agentTaskConfirmPolicy.blockReason(llmProvider.hasApiKey(), confirmed)?.let { code ->
+            return """{"ok":false,"error":"On-device confirm required before starting an agent task that uses the saved API key","code":"$code"}"""
+        }
         return agentTaskRunner.runTask(inputJson)
     }
 

@@ -42,6 +42,8 @@ fun HackerAINavHost(
     llmProvider: HttpLocalLlmProvider,
     shizukuManager: ShizukuManager,
     onRequestShizukuPermission: () -> Unit,
+    requireAgentTaskConfirm: Boolean = true,
+    onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -134,6 +136,8 @@ fun HackerAINavHost(
                     onClearApiKey = { llmProvider.clearApiKey() },
                     onSaveModel = { llmProvider.setModel(it) },
                     onSaveEndpoint = { llmProvider.setEndpoint(it) },
+                    requireAgentTaskConfirm = requireAgentTaskConfirm,
+                    onRequireAgentTaskConfirmChange = onRequireAgentTaskConfirmChange,
                 )
             }
             composable(ROUTE_PRIVILEGED) {

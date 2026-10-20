@@ -47,7 +47,7 @@ class RemoteDispatcher @Inject constructor(
         val args = runCatching { json.parseToJsonElement(cmd.argsJson).jsonObject }
             .getOrElse { return toJson(BoundCompanionResult(cmd.requestId, BoundCompanionResult.STATUS_INVALID, RemoteErrorCode.INVALID_PARAMETERS, "Bad argsJson")) }
         val dryRun = args["dryRun"]?.jsonPrimitive?.content == "true"
-        // Remote / AIDL path never auto-confirms. On-device confirm is a later surface (PR C).
+        // Remote / AIDL path never auto-confirms. AIDL runAgentTask uses AgentTaskConfirmPolicy; remote agent.run never auto-confirms.
         val confirmed = false
         val source = args["sourceNodeRef"]?.jsonPrimitive?.content ?: RemoteCommandGate.CONTROLLER
 
