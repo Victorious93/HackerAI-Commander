@@ -66,9 +66,9 @@ Help**.
 
 ### 3.1 Status
 
-Shows the app name and whether DroidCommand AI is detected. Nothing to
-configure. If you install or uninstall DroidCommand AI while the app is in the
-background, returning to the app re-checks and refreshes the screen.
+Shows whether DroidCommand AI is installed, plus a health strip: LLM key present
+(yes/no only — never the key), Shizuku state, external control ON/OFF, pending
+approval count, health string, and bridge protocol `1.1`.
 
 ### 3.2 Skills (Skill Browser)
 
@@ -141,12 +141,30 @@ These calls are made by DroidCommand AI, not by you:
 | `getSkillCatalog()` | Returns the skill catalog JSON |
 | `validateFinding(candidateJson)` | Returns `CONFIRMED` or `NEEDS_MORE_EVIDENCE` (currently a simple check on the reproduction hint length) |
 | `healthCheck()` | `ok`, `no_llm_provider`, or `dca_not_installed` |
+| `executeEnvelope(envelopeJson)` | Fleet remote-control envelope v1 (`BoundCompanionCommand` → `BoundCompanionResult`) |
 
 Agent tasks stop on step budget, repeated identical responses (doom-loop
 detection), cancellation, or a non-retryable provider error. Up to 200 task
 results are kept in memory.
 
-### 3.7 Roadmap (not implemented)
+### 3.7 Approvals
+
+When **Require confirm for agent tasks** is on (default), an AIDL `runAgentTask`
+that would use the saved API key returns `confirmation_required` with a
+`pendingId` and appears on the **Approve** tab. Approve runs it; Deny drops it.
+
+Remote envelope ops `agent.run` / `finding.validate` / `task.cancel` (with
+external control ON) similarly queue here. **`shizuku.shell` is never queued**
+(Shizuku console stays local-only).
+
+### 3.8 Settings safety toggles
+
+- **Require confirm for agent tasks** — default ON. Does not waive remote
+  `agent.run` gating.
+- **Allow external control** — default OFF. Must be on for `executeEnvelope`
+  reads/actions. Config import never turns this on.
+
+### 3.9 Roadmap (not implemented)
 
 - **[Roadmap] Notebook mode** — source-grounded Q&A over your own documents.
   **Not implemented** in this codebase.
@@ -177,8 +195,10 @@ commands through this app.
   - every call is refused when DroidCommand AI is not installed;
   - no AIDL method runs shell or privileged commands; the Shizuku console is
     local-only and requires on-screen confirmation for each command.
-  - Note: the controller *can* run LLM agent tasks via `runAgentTask` without an
-    on-device prompt once bound, using your configured API key.
+  - AIDL `runAgentTask` requires on-device confirm by default (Settings toggle);
+    pending items appear on the Approve tab.
+  - `executeEnvelope` requires external control ON (default OFF) plus the usual
+    BIND_HACKERAI / replay / confirm gates.
 - **[Likely]** Controller-side safety gates (remote control disabled by default,
   per-action approval, which companions are enabled) are implemented in the
   `Victorious93/droidcommand-AI` controller and were not verified from this repo.

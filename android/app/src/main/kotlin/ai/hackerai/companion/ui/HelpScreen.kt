@@ -56,19 +56,23 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
     ManualSection(
         "3. Features",
         listOf(
-            "Status — shows whether DroidCommand AI is detected; re-checked on resume.",
+            "Status — DCA + health strip (LLM key present, Shizuku, external control, " +
+                "pending approvals, protocol 1.1). No keys or chat shown.",
             "Skills — browse the built-in skill catalog; type in the search box to filter by " +
                 "name, category or description.",
-            "Settings — API key (stored encrypted, only last 4 chars shown; Save Key / Clear " +
-                "Key), Model ID (default claude-haiku-4-5-20251001), Endpoint (default Anthropic " +
-                "Messages API; requests use Anthropic Messages format).",
+            "Settings — API key (encrypted, last 4 shown), Model, Endpoint (Anthropic Messages " +
+                "format only — stock Ollama/LM Studio OpenAI URLs will reject). Toggles: " +
+                "Require confirm for agent tasks (default ON); Allow external control (default OFF; " +
+                "import never enables it).",
+            "Approve — pending AIDL agent tasks and remote agent.run / finding.validate / " +
+                "task.cancel waiting for on-device confirm. shizuku.shell is never listed.",
             "Shizuku — status card (not installed / not running / permission not granted / " +
                 "ready). When ready: type a command, tap Run (with confirmation), review the exact " +
                 "command in the dialog, tap Run or Cancel. Output shows exit code, stdout and " +
                 "stderr; 30 s timeout.",
             "Help — this screen.",
-            "Controller-only (no UI): runAgentTask, getTaskResult, cancelTask, getSkillCatalog, " +
-                "validateFinding, healthCheck.",
+            "Controller AIDL: runAgentTask (confirm-gated), getTaskResult, cancelTask, " +
+                "getSkillCatalog, validateFinding, healthCheck, executeEnvelope (fleet v1).",
             "[Roadmap] Notebook mode — NOT implemented.",
         ),
     ),
@@ -88,7 +92,7 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
     ManualSection(
         "5. Fleet integration",
         listOf(
-            "Remote control is OFF by default and gated: only BIND_HACKERAI holders can bind, " +
+            "External control is OFF by default (Settings). Only BIND_HACKERAI holders can bind, " +
                 "calls are refused without DroidCommand AI, and no AIDL method runs shell or " +
                 "privileged commands.",
             "Once bound, the controller can run LLM agent tasks using your configured key.",

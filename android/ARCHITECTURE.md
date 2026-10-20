@@ -68,10 +68,11 @@ runTaskInternal (background):
 | AppModule (Hilt)          | IMPLEMENTED | Binds `LocalLlmProvider → HttpLocalLlmProvider`; fixes missing DI binding           |
 | AgentTaskRunner           | IMPLEMENTED | Phase 5: `taskResults` map stores Queued/Running/Done/Cancelled/Error per task     |
 | LocalLlmProvider          | IMPLEMENTED | EncryptedSharedPreferences + HttpURLConnection; injected via Hilt                   |
-| StatusScreen              | IMPLEMENTED | DCA connection state display                                                        |
+| StatusScreen              | IMPLEMENTED | Health strip: DCA, LLM key present, Shizuku, external control, pending count, protocol |
 | SkillBrowserScreen        | IMPLEMENTED | Filter search over SkillCatalog; LazyColumn with category badges                    |
-| SettingsScreen            | IMPLEMENTED | API key (masked), model, endpoint inputs wired to HttpLocalLlmProvider              |
-| HackerAINavHost           | IMPLEMENTED | Bottom nav: Status / Skills / Settings; llmProvider injected from MainActivity      |
+| SettingsScreen            | IMPLEMENTED | API key, model, endpoint; agent-confirm toggle; external-control toggle (default OFF) |
+| ApprovalsScreen           | IMPLEMENTED | On-device Approve/Deny for AIDL agent tasks + remote destructive envelope ops       |
+| HackerAINavHost           | IMPLEMENTED | Bottom nav: Status / Skills / Settings / Shizuku / Approve / Help                   |
 | MainActivity              | IMPLEMENTED | Fixed infinite `recreate()` loop; injects DependencyGuard + HttpLocalLlmProvider   |
 | proguard-rules.pro        | IMPLEMENTED | Keeps AIDL stubs, Hilt entry points, serialization, and Tink classes                |
 | core-hackerai integration | IMPLEMENTED | Requires `./gradlew :core-hackerai:publishToMavenLocal` before AGP build            |
@@ -79,11 +80,16 @@ runTaskInternal (background):
 ## Remote-control envelope v1 (`remote/`)
 
 Protocol `BRIDGE_PROTOCOL_MAJOR = 1`, `BRIDGE_PROTOCOL_MINOR = 1` (spec: droidcommand-AI
-`docs/specs/REMOTE_CONTROL.md`, Appendix B). `BoundCompanionCommand` / `BoundCompanionResult`
-are Kotlin records using the existing `CommandEnvelope` / `ResultEnvelope` field names; no
-`.aidl` file changes (the live parcel bump happens together with the controller).
-`RemoteCommandGate` is decision-only: identity (Binder uid + `BIND_HACKERAI`) → external
-control (OFF by default) → replay/TTL → policy. Pentest/privileged ops (`agent.run`,
-`finding.validate`, `task.cancel`, `shizuku.shell`) are always destructive and return
-`confirmation_required`; the advisory `destructive` flag is never used to authorize.
-It is not yet wired into `IHackerAIService`.
+`docs/specs/REMOTE_CONTROL.md`, Appendix B). BoundCompanion JSON field map over AIDL
+`IHackerAIService.executeEnvelope`. `RemoteDispatcher` routes after `RemoteCommandGate`:
+identity (Binder uid + `BIND_HACKERAI`) → external control (**OFF by default**, Settings
+toggle; config import forces OFF) → replay/TTL → policy.
+
+- Reads (`capabilities.get`, `node.status.get`, `skills.catalog`, `task.result`, `health.check`):
+  allowed when external control is on.
+- `config.export` / `config.import`: `remoteAllowed=false` (controller source only); import
+  needs confirm / dry-run.
+- Destructive `agent.run` / `finding.validate` / `task.cancel`: queue for on-device Approvals;
+  execute only after Approve (`confirmed=true`). Replay nonce is not re-checked on approve.
+- `shizuku.shell`: local-only — never queued, never executed over the envelope.
+- Advisory `destructive` flag never authorizes. Snapshots/backups never include API keys or chat.
