@@ -74,6 +74,18 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
                         HackerAINavHost(
+                            companionStatus = CompanionStatus(
+                                dcaInstalled = isDcaInstalled,
+                                llmConfigured = llmProvider.hasApiKey(),
+                                shizukuState = shizukuManager.state.value,
+                                externalControlEnabled = externalControlPrefs.enabled,
+                                pendingApprovals = pendingApprovals.size,
+                                health = when {
+                                    !isDcaInstalled -> "dca_not_installed"
+                                    !llmProvider.hasApiKey() -> "no_llm_provider"
+                                    else -> "ok"
+                                },
+                            ),
                             llmProvider = llmProvider,
                             shizukuManager = shizukuManager,
                             onRequestShizukuPermission = { shizukuManager.requestPermission(this) },

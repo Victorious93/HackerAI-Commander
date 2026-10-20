@@ -2,6 +2,7 @@ package ai.hackerai.companion
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
 import ai.hackerai.companion.shizuku.ShizukuManager
+import ai.hackerai.companion.CompanionStatus
 import ai.hackerai.companion.PendingAgentTask
 import ai.hackerai.companion.ui.ApprovalsScreen
 import ai.hackerai.companion.ui.HelpScreen
@@ -43,6 +44,7 @@ private const val ROUTE_APPROVALS = "approvals"
 @Composable
 fun HackerAINavHost(
     isDcaConnected: Boolean = true,
+    companionStatus: CompanionStatus? = null,
     llmProvider: HttpLocalLlmProvider,
     shizukuManager: ShizukuManager,
     onRequestShizukuPermission: () -> Unit,
@@ -144,7 +146,7 @@ fun HackerAINavHost(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(ROUTE_STATUS) {
-                StatusScreen(isDcaConnected = isDcaConnected)
+                StatusScreen(isDcaConnected = isDcaConnected, status = companionStatus)
             }
             composable(ROUTE_SKILLS) {
                 SkillBrowserScreen()
