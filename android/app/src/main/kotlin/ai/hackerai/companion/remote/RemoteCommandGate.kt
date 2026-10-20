@@ -43,9 +43,19 @@ class RemoteCommandGate(
         val CONFIRM_OPS = setOf(ConfigBackup.OP_IMPORT)
 
         val DESCRIPTORS = listOf(
+            OpDescriptor("capabilities.get", "read", remoteAllowed = true, requiresConfirm = false),
             OpDescriptor(NodeStatus.OP, "read", remoteAllowed = true, requiresConfirm = false),
+            OpDescriptor("skills.catalog", "read", remoteAllowed = true, requiresConfirm = false),
+            OpDescriptor("task.result", "read", remoteAllowed = true, requiresConfirm = false),
+            OpDescriptor("health.check", "read", remoteAllowed = true, requiresConfirm = false),
             OpDescriptor(ConfigBackup.OP_EXPORT, "action", remoteAllowed = false, requiresConfirm = false),
             OpDescriptor(ConfigBackup.OP_IMPORT, "action", remoteAllowed = false, requiresConfirm = true),
+            // Destructive: advertised so the controller can discover them; always confirmation_required.
+            OpDescriptor("agent.run", "destructive", remoteAllowed = true, requiresConfirm = true),
+            OpDescriptor("finding.validate", "destructive", remoteAllowed = true, requiresConfirm = true),
+            OpDescriptor("task.cancel", "destructive", remoteAllowed = true, requiresConfirm = true),
+            // Local-only privileged shell — not remotely allowed, not queued for remote confirm.
+            OpDescriptor("shizuku.shell", "destructive", remoteAllowed = false, requiresConfirm = true),
         )
     }
 
