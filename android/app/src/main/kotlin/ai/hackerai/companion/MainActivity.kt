@@ -17,12 +17,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ai.hackerai.companion.ui.theme.HackerAITheme
+import ai.hackerai.companion.theme.FleetThemeClient
+import androidx.compose.runtime.collectAsState
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var dependencyGuard: DependencyGuard
+    @Inject lateinit var fleetThemeClient: FleetThemeClient
     @Inject lateinit var llmProvider: HttpLocalLlmProvider
     @Inject lateinit var shizukuManager: ShizukuManager
     @Inject lateinit var agentTaskConfirmPolicy: AgentTaskConfirmPolicy
@@ -59,6 +62,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         shizukuManager.init()
+        fleetThemeClient.start()
         dcaInstalledAtCreate = dependencyGuard.isDcaInstalled()
         refreshApprovals()
         renderContent(dcaInstalledAtCreate)
@@ -77,7 +81,8 @@ class MainActivity : ComponentActivity() {
 
     private fun renderContent(isDcaInstalled: Boolean) {
         setContent {
-            HackerAITheme {
+            val fleetPalette by fleetThemeClient.palette.collectAsState()
+            HackerAITheme(palette = fleetPalette) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
                         HackerAINavHost(

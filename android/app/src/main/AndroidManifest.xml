@@ -6,6 +6,11 @@
     <!-- Shizuku permission used to request privileged (ADB/root) access at runtime. -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
+    <!-- Package visibility for the read-only VictorLaunch fleet theme provider (FLEET_THEME.md). -->
+    <queries>
+        <package android:name="com.victorious.launch" />
+    </queries>
+
     <application
         android:name=".HackerAIApp"
         android:allowBackup="false"
@@ -37,6 +42,18 @@
                 <action android:name="ai.hackerai.companion.IHackerAIService" />
             </intent-filter>
         </service>
+
+        <!--
+            Fleet theme wake-up from VictorLaunch (explicit setPackage send, so exported).
+            Extras are never trusted; the receiver only re-queries the cert-pinned provider.
+        -->
+        <receiver
+            android:name=".theme.FleetThemeChangedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.victorious.launch.action.FLEET_THEME_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!--
             Shizuku / Sui provider (per RikkaApps/Shizuku-API docs). Lets the

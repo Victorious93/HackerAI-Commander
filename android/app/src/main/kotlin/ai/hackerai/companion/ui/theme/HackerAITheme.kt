@@ -1,7 +1,10 @@
 package ai.hackerai.companion.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import ai.hackerai.companion.theme.FleetPalette
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -33,7 +36,25 @@ private val DarkColors = darkColorScheme(
     onErrorContainer = OnErrorContainer,
 )
 
+/** Maps a fleet palette onto Material 3; null → the default navy/brand scheme. */
+fun colorSchemeFor(p: FleetPalette?): ColorScheme {
+    if (p == null) return DarkColors
+    val base = if (p.mode == "LIGHT") lightColorScheme() else darkColorScheme()
+    return base.copy(
+        primary = Color(p.primary),
+        onPrimary = OnBrand,
+        secondary = Color(p.secondary),
+        onSecondary = OnBrand,
+        background = Color(p.background),
+        onBackground = Color(p.onBackground),
+        surface = Color(p.surface),
+        onSurface = Color(p.onBackground),
+        onSurfaceVariant = Color(p.muted),
+        error = Color(p.danger),
+    )
+}
+
 @Composable
-fun HackerAITheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = DarkColors, content = content)
+fun HackerAITheme(palette: FleetPalette? = null, content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = colorSchemeFor(palette), content = content)
 }
