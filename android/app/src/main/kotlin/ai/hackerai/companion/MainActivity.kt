@@ -7,6 +7,8 @@ import ai.hackerai.companion.remote.RemoteCommandGate
 import ai.hackerai.companion.remote.RemoteDispatcher
 import ai.hackerai.companion.service.AgentTaskRunner
 import ai.hackerai.companion.shizuku.ShizukuManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import ai.hackerai.companion.ui.DcaRequiredScreen
+import ai.hackerai.companion.ui.DcaSetup
 import ai.hackerai.companion.ui.theme.HackerAITheme
 import ai.hackerai.companion.theme.FleetThemeClient
 import androidx.compose.runtime.collectAsState
@@ -123,7 +127,20 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     } else {
-                        DcaRequiredScreen()
+                        DcaRequiredScreen(
+                            onRefresh = {
+                                if (dependencyGuard.isDcaInstalled()) {
+                                    recreate()
+                                }
+                            },
+                            onOpenReleases = {
+                                runCatching {
+                                    startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(DcaSetup.RELEASES_URI)),
+                                    )
+                                }
+                            },
+                        )
                     }
                 }
             }

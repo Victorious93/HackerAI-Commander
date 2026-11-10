@@ -26,17 +26,23 @@ controller app (`ai.droidcommand.app`) through an AIDL **bound service**
   fleet taxonomy; it does not appear as a literal token in this repo's code.
 - The app also has its own small UI: Status, Skills, Settings, Shizuku
   (privileged console) and Help tabs.
-- The app depends on DroidCommand AI being installed. If it is not, the app
-  shows only a "Waiting for DroidCommand AI..." screen, and every bound-service
-  call returns an error (`DroidCommand AI is not installed`, or
-  `dca_not_installed` from `healthCheck`).
+- The app depends on DroidCommand AI being installed. If it is not (or this app
+  cannot see the package yet), the app shows a setup screen: what this companion
+  is, that it works with the DroidCommand AI controller, a link to GitHub
+  Releases for `Victorious93/droidcommand-AI`, an **I installed it — Refresh**
+  button, and **Help**. External control stays OFF. Every bound-service call
+  still returns an error (`DroidCommand AI is not installed`, or
+  `dca_not_installed` from `healthCheck`) until the controller is installed.
 
 [placeholder: screenshot — Status tab showing "Connected to DroidCommand AI"]
 
 ## 2. Install and setup
 
-1. **Install DroidCommand AI** (`ai.droidcommand.app`) first. The companion
-   checks for it at launch and whenever the app resumes.
+1. **Install DroidCommand AI** (`ai.droidcommand.app`) first, from the GitHub
+   Releases page for [`Victorious93/droidcommand-AI`](https://github.com/Victorious93/droidcommand-AI/releases).
+   The companion checks for it at launch, on resume, and when you tap
+   **I installed it — Refresh**. Use a build signed with the same key as this
+   companion.
 2. **Install the companion APK.** Get it from this repo's GitHub Releases or the
    *Android CI* workflow artifact (`app-debug-apk`), or build it yourself:
    ```bash
@@ -57,7 +63,7 @@ controller app (`ai.droidcommand.app`) through an AIDL **bound service**
    service's `healthCheck` reports `no_llm_provider` and agent tasks fail.
 6. *(Optional)* **Set up Shizuku** for privileged commands (see §3.4).
 
-[placeholder: screenshot — "Waiting for DroidCommand AI..." screen]
+[placeholder: screenshot — setup screen with Get DroidCommand AI / Refresh / Help]
 
 ## 3. Features and how to use them
 
@@ -206,8 +212,10 @@ commands through this app.
 
 ## 6. Troubleshooting / FAQ
 
-**Stuck on "Waiting for DroidCommand AI..."** — Install `ai.droidcommand.app`,
-then return to the app (it re-checks on resume).
+**Setup screen says DroidCommand AI is missing** — Install `ai.droidcommand.app`
+from the [droidcommand-AI Releases](https://github.com/Victorious93/droidcommand-AI/releases)
+page (the **Get DroidCommand AI** button opens it), then tap **I installed it — Refresh**.
+The app also re-checks on resume.
 
 **Controller can't bind / SecurityException** — Signing mismatch. Install
 companion and controller from the same build channel (both debug or both
