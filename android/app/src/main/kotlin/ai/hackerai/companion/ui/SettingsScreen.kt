@@ -1,7 +1,15 @@
 package ai.hackerai.companion.ui
 
 import ai.hackerai.companion.llm.HttpLocalLlmProvider
+import ai.hackerai.companion.llm.LlmConnectionResult
 import androidx.compose.foundation.layout.Column
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,22 +41,25 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    currentApiKey: String?,
-    currentModel: String,
-    currentEndpoint: String,
-    onSaveApiKey: (String) -> Unit,
-    onClearApiKey: () -> Unit,
-    onSaveModel: (String) -> Unit,
-    onSaveEndpoint: (String) -> Unit,
+    form: SettingsFormState,
+    onTestConnection: suspend () -> LlmConnectionResult = {
+        LlmConnectionResult(false, null, "Test connection is not available.")
+    },
     requireAgentTaskConfirm: Boolean = true,
     onRequireAgentTaskConfirmChange: (Boolean) -> Unit = {},
     externalControlEnabled: Boolean = false,
     onExternalControlEnabledChange: (Boolean) -> Unit = {},
 ) {
     var apiKeyDraft by remember { mutableStateOf("") }
-    var modelDraft by remember { mutableStateOf(currentModel) }
-    var endpointDraft by remember { mutableStateOf(currentEndpoint) }
+    var modelDraft by remember { mutableStateOf(form.model) }
+    var endpointDraft by remember { mutableStateOf(form.endpoint) }
     var showApiKey by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<LlmConnectionResult?>(null) }
+    val scope = rememberCoroutineScope()
+    val currentApiKey = form.apiKey
+    val currentModel = form.model
+    val currentEndpoint = form.endpoint
 
     Scaffold(
         topBar = {
@@ -59,7 +70,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
             Text("API Key", style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
@@ -71,7 +83,7 @@ fun SettingsScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = onClearApiKey,
+                    onClick = { form.clearApiKey(); testResult = null },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -89,25 +101,51 @@ fun SettingsScreen(
                     visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
-                        Text(
-                            text = if (showApiKey) "Hide" else "Show",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(end = 8.dp),
-                        )
+                        TextButton(onClick = { showApiKey = !showApiKey }) {
+                            Text(
+                                text = if (showApiKey) "Hide" else "Show",
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
                     },
                 )
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        if (apiKeyDraft.isNotBlank()) {
-                            onSaveApiKey(apiKeyDraft)
-                            apiKeyDraft = ""
-                        }
+                        form.saveApiKey(apiKeyDraft)
+                        apiKeyDraft = ""
+                        testResult = null
                     },
                     enabled = apiKeyDraft.isNotBlank(),
                 ) {
                     Text("Save Key")
                 }
+            }
+
+            if (currentApiKey != null) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        testing = true
+                        testResult = null
+                        scope.launch {
+                            testResult = withContext(Dispatchers.IO) { onTestConnection() }
+                            testing = false
+                        }
+                    },
+                    enabled = !testing,
+                ) {
+                    Text(if (testing) "Testing…" else "Test connection")
+                }
+            }
+            testResult?.let { result ->
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = result.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (result.ok) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.error,
+                )
             }
 
             Spacer(Modifier.height(24.dp))
@@ -171,7 +209,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = { onSaveModel(modelDraft) },
+                onClick = { form.saveModel(modelDraft) },
                 enabled = modelDraft.isNotBlank() && modelDraft != currentModel,
             ) {
                 Text("Save Model")
@@ -195,7 +233,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = { onSaveEndpoint(endpointDraft) },
+                onClick = { form.saveEndpoint(endpointDraft) },
                 enabled = endpointDraft.isNotBlank() && endpointDraft != currentEndpoint,
             ) {
                 Text("Save Endpoint")
