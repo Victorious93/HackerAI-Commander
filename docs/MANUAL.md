@@ -94,8 +94,11 @@ Tapping a card currently does nothing (there is no skill detail screen yet).
 Configures the model the agent tasks call.
 
 - **API Key** — enter a key and tap **Save Key**. Afterwards only the last 4
-  characters are shown (*Key configured (ends in …abcd)*). Tap **Clear Key** to
-  remove it. To change a key, clear it and enter a new one.
+  characters are shown (*Key configured (ends in …abcd)*). The screen stays on
+  that state immediately (it does not snap back to the empty field). **Show** /
+  **Hide** toggles whether the typed key is visible. Tap **Clear Key** to remove
+  it. To change a key, clear it and enter a new one. **Test connection** (when a
+  key is saved) reports success, HTTP 401, or HTTP 404 — it never prints the key.
 - **Model** — model ID (default `claude-haiku-4-5-20251001`). Edit and tap
   **Save Model**.
 - **Endpoint** — default `https://api.anthropic.com/v1/messages`. Edit and tap

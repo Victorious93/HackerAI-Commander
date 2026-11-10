@@ -8,6 +8,7 @@ import ai.hackerai.companion.remote.PendingRemoteOp
 import ai.hackerai.companion.ui.ApprovalsScreen
 import ai.hackerai.companion.ui.HelpScreen
 import ai.hackerai.companion.ui.ShizukuScreen
+import ai.hackerai.companion.ui.SettingsFormState
 import ai.hackerai.companion.ui.SettingsScreen
 import ai.hackerai.companion.ui.SkillBrowserScreen
 import ai.hackerai.companion.ui.StatusScreen
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -156,14 +158,20 @@ fun HackerAINavHost(
                 SkillBrowserScreen()
             }
             composable(ROUTE_SETTINGS) {
+                val form = remember {
+                    SettingsFormState(
+                        initialApiKey = llmProvider.getApiKey(),
+                        initialModel = llmProvider.getModel(),
+                        initialEndpoint = llmProvider.getEndpoint(),
+                        persistApiKey = { llmProvider.setApiKey(it) },
+                        persistClearApiKey = { llmProvider.clearApiKey() },
+                        persistModel = { llmProvider.setModel(it) },
+                        persistEndpoint = { llmProvider.setEndpoint(it) },
+                    )
+                }
                 SettingsScreen(
-                    currentApiKey = llmProvider.getApiKey(),
-                    currentModel = llmProvider.getModel(),
-                    currentEndpoint = llmProvider.getEndpoint(),
-                    onSaveApiKey = { llmProvider.setApiKey(it) },
-                    onClearApiKey = { llmProvider.clearApiKey() },
-                    onSaveModel = { llmProvider.setModel(it) },
-                    onSaveEndpoint = { llmProvider.setEndpoint(it) },
+                    form = form,
+                    onTestConnection = { llmProvider.testConnection() },
                     requireAgentTaskConfirm = requireAgentTaskConfirm,
                     onRequireAgentTaskConfirmChange = onRequireAgentTaskConfirmChange,
                     externalControlEnabled = externalControlEnabled,

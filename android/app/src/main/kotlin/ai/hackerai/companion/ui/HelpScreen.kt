@@ -63,8 +63,10 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
                 "pending approvals, protocol 1.1). No keys or chat shown.",
             "Skills — browse the built-in skill catalog; type in the search box to filter by " +
                 "name, category or description.",
-            "Settings — API key (encrypted, last 4 shown), Model, Endpoint (Anthropic Messages " +
-                "format only — stock Ollama/LM Studio OpenAI URLs will reject). Toggles: " +
+            "Settings — API key (encrypted, last 4 shown; Show/Hide is tappable). After saving, " +
+                "the screen stays on Key configured. Test connection reports success/401/404 " +
+                "without showing the key. Model, Endpoint (Anthropic Messages format only — " +
+                "stock Ollama/LM Studio OpenAI URLs will reject). Toggles: " +
                 "Require confirm for agent tasks (default ON); Allow external control (default OFF; " +
                 "import never enables it).",
             "Approve — pending AIDL agent tasks and remote agent.run / finding.validate / " +

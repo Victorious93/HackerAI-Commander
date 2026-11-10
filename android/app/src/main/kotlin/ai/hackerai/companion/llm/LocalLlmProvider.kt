@@ -1,5 +1,6 @@
 package ai.hackerai.companion.llm
 
+
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -78,6 +79,35 @@ class HttpLocalLlmProvider @Inject constructor(
     fun getEndpoint(): String = prefs.getString(KEY_ENDPOINT, DEFAULT_ENDPOINT) ?: DEFAULT_ENDPOINT
 
     override fun hasApiKey(): Boolean = getApiKey() != null
+
+    /**
+     * Tiny probe used by Settings → Test connection.
+     * The returned summary never includes the API key.
+     */
+    fun testConnection(): LlmConnectionResult {
+        val apiKey = getApiKey()
+            ?: return LlmConnectionResult(false, null, "No API key configured.")
+        return try {
+            val conn = java.net.URL(getEndpoint()).openConnection() as java.net.HttpURLConnection
+            try {
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.setRequestProperty("x-api-key", apiKey)
+                conn.setRequestProperty("anthropic-version", "2023-06-01")
+                conn.connectTimeout = 15_000
+                conn.readTimeout = 15_000
+                conn.doOutput = true
+                val modelEsc = getModel().replace("\\", "\\\\").replace("\"", "\\\"")
+                val body = "{" + "\"model\":\"" + modelEsc + "\",\"max_tokens\":8,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}"
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                LlmConnectionProbe.classify(conn.responseCode)
+            } finally {
+                conn.disconnect()
+            }
+        } catch (e: Exception) {
+            LlmConnectionProbe.fromThrowable(e, apiKey)
+        }
+    }
 
     /**
      * Single-turn completion via the Anthropic Messages API (or an OpenAI-compatible
