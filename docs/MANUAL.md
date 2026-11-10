@@ -59,16 +59,16 @@ controller app (`ai.droidcommand.app`) through an AIDL **bound service**
    key). Do not mix a debug companion with a release controller.
 4. **Open the app** and confirm the Status tab reads
    *Connected to DroidCommand AI*.
-5. **Add an LLM API key** in the Settings tab (see §3.3). Without it the
+5. **Add an LLM API key** in the Settings tab (see §3.4). Without it the
    service's `healthCheck` reports `no_llm_provider` and agent tasks fail.
-6. *(Optional)* **Set up Shizuku** for privileged commands (see §3.4).
+6. *(Optional)* **Set up Shizuku** for privileged commands (see §3.5).
 
 [placeholder: screenshot — setup screen with Get DroidCommand AI / Refresh / Help]
 
 ## 3. Features and how to use them
 
-The bottom navigation bar has five tabs: **Status, Skills, Settings, Shizuku,
-Help**.
+The bottom navigation bar has these tabs: **Status, Ask, Skills, Settings, Shizuku,
+Approve, Help**.
 
 ### 3.1 Status
 
@@ -80,7 +80,16 @@ still shows health (key present yes/no only — never the key), Shizuku, externa
 control, pending approvals, and bridge protocol `1.1`. The strip is rebuilt on
 resume and after Settings changes, not once at launch.
 
-### 3.2 Skills (Skill Browser)
+### 3.2 Ask (on-device run)
+
+Type a prompt and tap **Run** to start an agent task on this phone, using the
+saved API key and [AgentTaskRunner]. Tapping **Run** is the on-device
+confirmation for that task (it is not queued on the Approve tab). If no key is
+saved, the screen asks you to open Settings. Results appear on the same screen.
+This path does not turn on external control, does not auto-approve remote ops,
+and never runs `shizuku.shell`.
+
+### 3.3 Skills (Skill Browser)
 
 Browse the built-in security skill catalog the agent can use.
 
@@ -93,7 +102,7 @@ Tapping a card currently does nothing (there is no skill detail screen yet).
 
 [placeholder: screenshot — Skill Browser with a search filter applied]
 
-### 3.3 Settings (LLM provider)
+### 3.4 Settings (LLM provider)
 
 Configures the model the agent tasks call.
 
@@ -112,7 +121,7 @@ Configures the model the agent tasks call.
 
 [placeholder: screenshot — Settings tab with key configured]
 
-### 3.4 Shizuku (privileged console)
+### 3.5 Shizuku (privileged console)
 
 Lets you run a shell command with Shizuku's elevated identity (ADB shell, or
 root if Shizuku runs as root).
@@ -138,11 +147,11 @@ To run a command:
 
 [placeholder: screenshot — confirmation dialog showing the command]
 
-### 3.5 Help
+### 3.6 Help
 
 Shows a condensed in-app version of this manual.
 
-### 3.6 Bound service (used by the controller, no UI)
+### 3.7 Bound service (used by the controller, no UI)
 
 These calls are made by DroidCommand AI, not by you:
 
@@ -160,7 +169,7 @@ Agent tasks stop on step budget, repeated identical responses (doom-loop
 detection), cancellation, or a non-retryable provider error. Up to 200 task
 results are kept in memory.
 
-### 3.7 Approvals
+### 3.8 Approvals
 
 When **Require confirm for agent tasks** is on (default), an AIDL `runAgentTask`
 that would use the saved API key returns `confirmation_required` with a
@@ -170,14 +179,14 @@ Remote envelope ops `agent.run` / `finding.validate` / `task.cancel` (with
 external control ON) similarly queue here. **`shizuku.shell` is never queued**
 (Shizuku console stays local-only).
 
-### 3.8 Settings safety toggles
+### 3.9 Settings safety toggles
 
 - **Require confirm for agent tasks** — default ON. Does not waive remote
   `agent.run` gating.
 - **Allow external control** — default OFF. Must be on for `executeEnvelope`
   reads/actions. Config import never turns this on.
 
-### 3.9 Roadmap (not implemented)
+### 3.10 Roadmap (not implemented)
 
 - **[Roadmap] Notebook mode** — source-grounded Q&A over your own documents.
   **Not implemented** in this codebase.

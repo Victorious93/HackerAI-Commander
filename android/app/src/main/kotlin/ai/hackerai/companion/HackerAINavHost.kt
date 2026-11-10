@@ -6,6 +6,7 @@ import ai.hackerai.companion.CompanionStatus
 import ai.hackerai.companion.PendingAgentTask
 import ai.hackerai.companion.remote.PendingRemoteOp
 import ai.hackerai.companion.ui.ApprovalsScreen
+import ai.hackerai.companion.ui.AskScreen
 import ai.hackerai.companion.ui.HelpScreen
 import ai.hackerai.companion.ui.ShizukuScreen
 import ai.hackerai.companion.ui.SettingsFormState
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -38,6 +40,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 
 private const val ROUTE_STATUS = "status"
+private const val ROUTE_ASK = "ask"
 private const val ROUTE_SKILLS = "skills"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_PRIVILEGED = "privileged"
@@ -63,6 +66,10 @@ fun HackerAINavHost(
     onApproveRemotePending: (String) -> Unit = {},
     onDenyRemotePending: (String) -> Unit = {},
     onLlmSettingsChanged: () -> Unit = {},
+    llmConfigured: Boolean = false,
+    onRunAsk: (String) -> String = { "" },
+    onPollAsk: (String) -> String = { "" },
+    onCancelAsk: (String) -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -78,6 +85,18 @@ fun HackerAINavHost(
                     selected = currentDestination?.hierarchy?.any { it.route == ROUTE_STATUS } == true,
                     onClick = {
                         navController.navigate(ROUTE_STATUS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Filled.Send, contentDescription = "Ask") },
+                    label = { Text("Ask") },
+                    selected = currentDestination?.hierarchy?.any { it.route == ROUTE_ASK } == true,
+                    onClick = {
+                        navController.navigate(ROUTE_ASK) {
                             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
@@ -184,6 +203,21 @@ fun HackerAINavHost(
                             restoreState = true
                         }
                     },
+                )
+            }
+            composable(ROUTE_ASK) {
+                AskScreen(
+                    hasApiKey = llmConfigured,
+                    onOpenSettings = {
+                        navController.navigate(ROUTE_SETTINGS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onRun = onRunAsk,
+                    onPoll = onPollAsk,
+                    onCancel = onCancelAsk,
                 )
             }
             composable(ROUTE_SKILLS) {

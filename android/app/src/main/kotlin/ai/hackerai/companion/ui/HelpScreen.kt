@@ -63,6 +63,10 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
                 "Shizuku, optional Allow external control). Installed is not the same as bound. " +
                 "A compact details list still shows health and protocol 1.1, refreshed on resume. " +
                 "No keys or chat shown.",
+            "Ask — type a prompt and tap Run to start an on-device agent task with the " +
+                "saved API key. Tapping Run is the on-device confirmation. If no key is saved, " +
+                "the screen prompts you to open Settings. This does not enable external control " +
+                "or auto-approve remote ops, and it never runs shizuku.shell.",
             "Skills — browse the built-in skill catalog; type in the search box to filter by " +
                 "name, category or description.",
             "Settings — API key (encrypted, last 4 shown; Show/Hide is tappable). After saving, " +
