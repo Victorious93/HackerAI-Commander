@@ -116,11 +116,7 @@ class ShizukuManager @Inject constructor(
         }.getOrDefault(false)
 
     private fun isShizukuInstalled(): Boolean =
-        runCatching {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(SHIZUKU_MANAGER_PACKAGE, 0)
-            true
-        }.getOrDefault(false)
+        isProviderPackageInstalled(context.packageManager)
 
     /**
      * Request Shizuku permission. Uses the Shizuku permission API (result arrives
@@ -209,6 +205,19 @@ class ShizukuManager @Inject constructor(
     companion object {
         const val SHIZUKU_PERMISSION = "moe.shizuku.manager.permission.API_V23"
         const val SHIZUKU_MANAGER_PACKAGE = "moe.shizuku.privileged.api"
+        /** Official Sui (Magisk/Zygisk Shizuku backend) applicationId. */
+        const val SUI_PACKAGE = "rikka.sui"
+
+        /** True if the Shizuku manager or Sui package is visible to PackageManager. */
+        fun isProviderPackageInstalled(pm: PackageManager): Boolean =
+            listOf(SHIZUKU_MANAGER_PACKAGE, SUI_PACKAGE).any { pkg ->
+                runCatching {
+                    @Suppress("DEPRECATION")
+                    pm.getPackageInfo(pkg, 0)
+                    true
+                }.getOrDefault(false)
+            }
+
         const val PERMISSION_REQUEST_CODE = 4211
         const val DEFAULT_TIMEOUT_MS = 30_000L
         private const val BIND_TIMEOUT_MS = 15_000L

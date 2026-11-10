@@ -197,7 +197,3 @@ fun HackerAINavHost(
     }
 }
 
-@Composable
-fun DcaRequiredScreen() {
-    StatusScreen(isDcaConnected = false)
-}

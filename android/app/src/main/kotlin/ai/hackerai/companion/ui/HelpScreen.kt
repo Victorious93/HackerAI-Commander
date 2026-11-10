@@ -37,14 +37,17 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
                 "AIDL bound service.",
             "Fleet role: BOUND_COMPANION — bound to the controller rather than standalone. " +
                 "[Likely] fleet taxonomy, not a token in this app's code.",
-            "If DroidCommand AI is not installed, the app shows a waiting screen and all " +
-                "service calls return an error.",
+            "If DroidCommand AI is not installed (or this app can't see it yet), a setup " +
+                "screen explains what to install, links to the Victorious93/droidcommand-AI " +
+                "GitHub Releases page, and offers Refresh and Help. External control stays OFF. " +
+                "All service calls still return an error until the controller is installed.",
         ),
     ),
     ManualSection(
         "2. Install & setup",
         listOf(
-            "1. Install DroidCommand AI first.",
+            "1. Install DroidCommand AI first (GitHub Releases for Victorious93/droidcommand-AI, " +
+                "same signing key as this app). The setup screen's Get DroidCommand AI button opens that page.",
             "2. Install this APK (GitHub Release, CI artifact, or ./gradlew :app:assembleDebug).",
             "3. Companion and controller must be signed with the same key (debug with debug, " +
                 "release with release). [Likely] the bind permission is signature-level.",
@@ -103,7 +106,8 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
     ManualSection(
         "6. Troubleshooting",
         listOf(
-            "Stuck on \"Waiting for DroidCommand AI...\" — install it, then return to the app.",
+            "Setup screen says DroidCommand AI is missing — install it from the GitHub Releases " +
+                "link, then tap I installed it — Refresh (the app also re-checks on resume).",
             "Controller can't bind — signing mismatch; use matching debug/release builds.",
             "healthCheck says no_llm_provider — add an API key in Settings.",
             "LLM API error 401/403 — bad key; 4xx/404 — check endpoint and model ID.",
