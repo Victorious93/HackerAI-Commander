@@ -72,9 +72,13 @@ Help**.
 
 ### 3.1 Status
 
-Shows whether DroidCommand AI is installed, plus a health strip: LLM key present
-(yes/no only — never the key), Shizuku state, external control ON/OFF, pending
-approval count, health string, and bridge protocol `1.1`.
+A setup checklist: install DroidCommand AI, add an API key (button opens
+Settings), optional Shizuku, and optional **Allow external control** (one
+sentence of consequences). **Installed is not bound** — seeing the controller
+package on the phone does not mean a live connection. A compact details list
+still shows health (key present yes/no only — never the key), Shizuku, external
+control, pending approvals, and bridge protocol `1.1`. The strip is rebuilt on
+resume and after Settings changes, not once at launch.
 
 ### 3.2 Skills (Skill Browser)
 
