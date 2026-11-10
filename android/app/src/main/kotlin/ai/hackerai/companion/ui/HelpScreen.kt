@@ -59,8 +59,10 @@ val MANUAL_SECTIONS: List<ManualSection> = listOf(
     ManualSection(
         "3. Features",
         listOf(
-            "Status — DCA + health strip (LLM key present, Shizuku, external control, " +
-                "pending approvals, protocol 1.1). No keys or chat shown.",
+            "Status — setup checklist (install DroidCommand AI, add an API key, optional " +
+                "Shizuku, optional Allow external control). Installed is not the same as bound. " +
+                "A compact details list still shows health and protocol 1.1, refreshed on resume. " +
+                "No keys or chat shown.",
             "Skills — browse the built-in skill catalog; type in the search box to filter by " +
                 "name, category or description.",
             "Settings — API key (encrypted, last 4 shown; Show/Hide is tappable). After saving, " +

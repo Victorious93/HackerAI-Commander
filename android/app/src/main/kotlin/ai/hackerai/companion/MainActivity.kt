@@ -43,10 +43,28 @@ class MainActivity : ComponentActivity() {
     private var dcaInstalledAtCreate: Boolean = false
     private var pendingApprovals by mutableStateOf(emptyList<PendingAgentTask>())
     private var remoteApprovals by mutableStateOf(emptyList<PendingRemoteOp>())
+    private var companionStatus by mutableStateOf<CompanionStatus?>(null)
 
     private fun refreshApprovals() {
         pendingApprovals = pendingAgentApprovals.list()
         remoteApprovals = pendingRemoteApprovals.list()
+        refreshStatus()
+    }
+
+    private fun refreshStatus() {
+        val dca = dependencyGuard.isDcaInstalled()
+        companionStatus = CompanionStatus(
+            dcaInstalled = dca,
+            llmConfigured = llmProvider.hasApiKey(),
+            shizukuState = shizukuManager.state.value,
+            externalControlEnabled = externalControlPrefs.enabled,
+            pendingApprovals = pendingApprovals.size + remoteApprovals.size,
+            health = when {
+                !dca -> "dca_not_installed"
+                !llmProvider.hasApiKey() -> "no_llm_provider"
+                else -> "ok"
+            },
+        )
     }
 
     private fun approvePending(id: String) {
@@ -76,6 +94,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Re-check Shizuku state after the user may have changed it elsewhere.
         shizukuManager.refreshState()
+        refreshApprovals()
         // Only recreate when DCA install state actually changed to avoid an
         // infinite recreation loop (recreate() → onResume() → recreate() …).
         if (dependencyGuard.isDcaInstalled() != dcaInstalledAtCreate) {
@@ -90,18 +109,7 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (isDcaInstalled) {
                         HackerAINavHost(
-                            companionStatus = CompanionStatus(
-                                dcaInstalled = isDcaInstalled,
-                                llmConfigured = llmProvider.hasApiKey(),
-                                shizukuState = shizukuManager.state.value,
-                                externalControlEnabled = externalControlPrefs.enabled,
-                                pendingApprovals = pendingApprovals.size + remoteApprovals.size,
-                                health = when {
-                                    !isDcaInstalled -> "dca_not_installed"
-                                    !llmProvider.hasApiKey() -> "no_llm_provider"
-                                    else -> "ok"
-                                },
-                            ),
+                            companionStatus = companionStatus,
                             llmProvider = llmProvider,
                             shizukuManager = shizukuManager,
                             onRequestShizukuPermission = { shizukuManager.requestPermission(this) },
@@ -111,6 +119,7 @@ class MainActivity : ComponentActivity() {
                             onExternalControlEnabledChange = {
                                 externalControlPrefs.enabled = it
                                 remoteCommandGate.externalControlEnabled = it
+                                refreshStatus()
                             },
                             pendingApprovals = pendingApprovals,
                             remoteApprovals = remoteApprovals,
@@ -125,6 +134,7 @@ class MainActivity : ComponentActivity() {
                                 remoteDispatcher.denyPending(it)
                                 refreshApprovals()
                             },
+                            onLlmSettingsChanged = { refreshStatus() },
                         )
                     } else {
                         DcaRequiredScreen(

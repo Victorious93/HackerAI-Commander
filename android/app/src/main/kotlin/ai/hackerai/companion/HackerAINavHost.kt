@@ -62,6 +62,7 @@ fun HackerAINavHost(
     onDenyPending: (String) -> Unit = {},
     onApproveRemotePending: (String) -> Unit = {},
     onDenyRemotePending: (String) -> Unit = {},
+    onLlmSettingsChanged: () -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -152,7 +153,38 @@ fun HackerAINavHost(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(ROUTE_STATUS) {
-                StatusScreen(isDcaConnected = isDcaConnected, status = companionStatus)
+                StatusScreen(
+                    isDcaConnected = isDcaConnected,
+                    status = companionStatus,
+                    onAddApiKey = {
+                        navController.navigate(ROUTE_SETTINGS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenSettings = {
+                        navController.navigate(ROUTE_SETTINGS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenShizuku = {
+                        navController.navigate(ROUTE_PRIVILEGED) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenApprovals = {
+                        navController.navigate(ROUTE_APPROVALS) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
             composable(ROUTE_SKILLS) {
                 SkillBrowserScreen()
@@ -163,10 +195,10 @@ fun HackerAINavHost(
                         initialApiKey = llmProvider.getApiKey(),
                         initialModel = llmProvider.getModel(),
                         initialEndpoint = llmProvider.getEndpoint(),
-                        persistApiKey = { llmProvider.setApiKey(it) },
-                        persistClearApiKey = { llmProvider.clearApiKey() },
-                        persistModel = { llmProvider.setModel(it) },
-                        persistEndpoint = { llmProvider.setEndpoint(it) },
+                        persistApiKey = { llmProvider.setApiKey(it); onLlmSettingsChanged() },
+                        persistClearApiKey = { llmProvider.clearApiKey(); onLlmSettingsChanged() },
+                        persistModel = { llmProvider.setModel(it); onLlmSettingsChanged() },
+                        persistEndpoint = { llmProvider.setEndpoint(it); onLlmSettingsChanged() },
                     )
                 }
                 SettingsScreen(
