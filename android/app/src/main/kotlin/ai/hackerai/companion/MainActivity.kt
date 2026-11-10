@@ -135,6 +135,10 @@ class MainActivity : ComponentActivity() {
                                 refreshApprovals()
                             },
                             onLlmSettingsChanged = { refreshStatus() },
+                            llmConfigured = companionStatus?.llmConfigured == true,
+                            onRunAsk = { agentTaskRunner.runTask(it) },
+                            onPollAsk = { agentTaskRunner.getTaskResult(it) },
+                            onCancelAsk = { agentTaskRunner.cancelTask(it) },
                         )
                     } else {
                         DcaRequiredScreen(
